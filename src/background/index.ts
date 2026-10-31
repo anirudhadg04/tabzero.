@@ -17,6 +17,7 @@ import {
   changeDailyGoal,
   addPlannedActivity,
   completePlannedActivity,
+  removePlannedActivity,
 } from '../history/actions';
 import { evaluateAchievements } from '../services/achievements';
 import { recordDomainVisit } from '../services/tracker';
@@ -483,6 +484,14 @@ chrome.runtime.onMessage.addListener((message: ExtensionMessage, sender, sendRes
 
       case 'COMPLETE_ACTIVITY': {
         data.history = completePlannedActivity(data.history, message.id);
+        data.achievements = evaluateAchievements(data.achievements, data.history.present);
+        await setStorageData(data);
+        sendResponse({ success: true, data });
+        break;
+      }
+
+      case 'REMOVE_ACTIVITY': {
+        data.history = removePlannedActivity(data.history, message.id);
         data.achievements = evaluateAchievements(data.achievements, data.history.present);
         await setStorageData(data);
         sendResponse({ success: true, data });

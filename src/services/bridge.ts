@@ -17,6 +17,7 @@ import {
   changeDailyGoal,
   addPlannedActivity,
   completePlannedActivity,
+  removePlannedActivity,
 } from '../history/actions';
 import { evaluateAchievements } from './achievements';
 
@@ -135,6 +136,11 @@ async function handleLocalFallback(message: ExtensionMessage): Promise<OfflineSt
 
     case 'COMPLETE_ACTIVITY':
       data.history = completePlannedActivity(data.history, message.id);
+      data.achievements = evaluateAchievements(data.achievements, data.history.present);
+      break;
+
+    case 'REMOVE_ACTIVITY':
+      data.history = removePlannedActivity(data.history, message.id);
       data.achievements = evaluateAchievements(data.achievements, data.history.present);
       break;
 

@@ -46,7 +46,7 @@ export function removeRestrictedSite(history: HistoryState, siteId: string): His
   return updatedHistory;
 }
 
-// Toggle restriction site status
+// 3. Toggle restriction site status
 export function toggleRestrictedSite(history: HistoryState, siteId: string): HistoryState {
   const newPresent: CoreAppState = {
     ...history.present,
@@ -126,13 +126,31 @@ export function addPlannedActivity(
   return recordAction(history, newPresent);
 }
 
-// 8. Complete an activity
+// 8. Complete or Untick a planned activity (toggle completion)
 export function completePlannedActivity(history: HistoryState, activityId: string): HistoryState {
   const newPresent: CoreAppState = {
     ...history.present,
-    activities: history.present.activities.map(a =>
-      a.id === activityId ? { ...a, completed: true, completedAt: Date.now() } : a
-    ),
+    activities: history.present.activities.map(a => {
+      if (a.id === activityId) {
+        const nextCompleted = !a.completed;
+        return {
+          ...a,
+          completed: nextCompleted,
+          completedAt: nextCompleted ? Date.now() : undefined,
+        };
+      }
+      return a;
+    }),
+  };
+
+  return recordAction(history, newPresent);
+}
+
+// 9. Remove a planned activity
+export function removePlannedActivity(history: HistoryState, activityId: string): HistoryState {
+  const newPresent: CoreAppState = {
+    ...history.present,
+    activities: history.present.activities.filter(a => a.id !== activityId),
   };
 
   return recordAction(history, newPresent);

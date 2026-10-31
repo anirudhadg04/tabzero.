@@ -39,7 +39,6 @@ import {
   ShieldCheck,
   Plus,
   Trash2,
-  ExternalLink,
   ChevronRight,
   TrendingUp,
   Layers,
@@ -47,7 +46,6 @@ import {
   Home,
   Target,
   BarChart2,
-  User,
   Check,
   Calendar,
   CloudSun,
@@ -72,13 +70,20 @@ export const Dashboard: React.FC = () => {
   const [customMinutes, setCustomMinutes] = useState(30);
   const [customSeconds, setCustomSeconds] = useState(0);
 
-  // Input states for restricted sites & pledges
+  // Input state for restricted sites (no categories)
   const [newDomain, setNewDomain] = useState('');
-  const [newCategory, setNewCategory] = useState<RestrictedSite['category']>('social');
+
+  // Input states for pledges
   const [pledgeTitle, setPledgeTitle] = useState('');
   const [pledgePillar, setPledgePillar] = useState<PillarType>('DISCONNECT');
   const [pledgeTargetMins, setPledgeTargetMins] = useState(30);
   const [showPledgeForm, setShowPledgeForm] = useState(false);
+
+  // Input states for user-entered planned activities (purely user-entered)
+  const [activityTitle, setActivityTitle] = useState('');
+  const [activityPillar, setActivityPillar] = useState<PillarType>('MOVE');
+  const [activityDuration, setActivityDuration] = useState(30);
+  const [showActivityForm, setShowActivityForm] = useState(false);
 
   // System theme listener
   const [systemIsDark, setSystemIsDark] = useState<boolean>(() => {
@@ -209,7 +214,6 @@ export const Dashboard: React.FC = () => {
     const updated = await sendExtensionMessage({
       type: 'ADD_SITE',
       domain: clean,
-      category: newCategory,
     });
     setData(updated);
     setNewDomain('');
@@ -256,8 +260,31 @@ export const Dashboard: React.FC = () => {
     setData(updated);
   };
 
+  const handleAddCustomActivity = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!activityTitle.trim()) return;
+    const updated = await sendExtensionMessage({
+      type: 'ADD_ACTIVITY',
+      activity: {
+        title: activityTitle.trim(),
+        pillar: activityPillar,
+        durationMinutes: activityDuration,
+        completed: false,
+      },
+    });
+    setData(updated);
+    setActivityTitle('');
+    setShowActivityForm(false);
+  };
+
+  // Untick or tick activity seamlessly (toggles status)
   const handleCompleteActivity = async (id: string) => {
     const updated = await sendExtensionMessage({ type: 'COMPLETE_ACTIVITY', id });
+    setData(updated);
+  };
+
+  const handleRemoveActivity = async (id: string) => {
+    const updated = await sendExtensionMessage({ type: 'REMOVE_ACTIVITY', id });
     setData(updated);
   };
 
@@ -305,9 +332,14 @@ export const Dashboard: React.FC = () => {
     day: 'numeric',
   }).format(new Date());
 
-  // Browsing Time
+  // Browsing Time (pure domain-based, zero categories)
   const domainUsageList = Object.values(data.usage || {}).sort((a, b) => b.timeSpentSeconds - a.timeSpentSeconds);
   const totalBrowsingSeconds = domainUsageList.reduce((sum, d) => sum + d.timeSpentSeconds, 0);
+
+  // User planned activities: filter out any legacy pre-seeded default items (act_1, act_2, act_3) so it is purely user-entered
+  const userActivities = (present.activities || []).filter(
+    a => a.id !== 'act_1' && a.id !== 'act_2' && a.id !== 'act_3'
+  );
 
   // Offline Time
   const sessionCompletedMinutes = (present.completedSessions || [])
@@ -319,7 +351,7 @@ export const Dashboard: React.FC = () => {
       ? Math.round((Date.now() - session.startTime) / 60000)
       : 0;
 
-  const activityCompletedMinutes = (present.activities || [])
+  const activityCompletedMinutes = userActivities
     .filter(a => a.completed)
     .reduce((sum, a) => sum + a.durationMinutes, 0);
 
@@ -333,19 +365,20 @@ export const Dashboard: React.FC = () => {
     ? Math.round(((totalOfflineMins * 60) / totalTimeTrackedSeconds) * 100)
     : 100;
 
-  // Categories breakdown
-  const categoryMap: Record<string, number> = {};
-  domainUsageList.forEach(d => {
-    categoryMap[d.category] = (categoryMap[d.category] || 0) + d.timeSpentSeconds;
+  // Screen time share by domain (purely user domain & time, no categories)
+  const topDomainShares = domainUsageList.slice(0, 5).map(item => {
+    const pct = totalBrowsingSeconds > 0
+      ? Math.round((item.timeSpentSeconds / totalBrowsingSeconds) * 100)
+      : 0;
+    return { ...item, pct };
   });
-  const categoryStats = Object.entries(categoryMap).sort((a, b) => b[1] - a[1]);
 
   // Weather formatting
   const formattedWeather = formatWeather(data.weather);
   const recommendations = generateRecommendations(data.weather);
 
   // Weekly analytics data (7 days: Mon to Sun)
-  const currentDayIndex = new Date().getDay(); // 0 is Sun, 1 is Mon...
+  const currentDayIndex = new Date().getDay();
   const daysOfWeek = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
   const weeklyChartData = daysOfWeek.map((day, idx) => {
     const isToday = idx === currentDayIndex;
@@ -356,7 +389,6 @@ export const Dashboard: React.FC = () => {
 
   // Achievements
   const unlockedAchievements = data.achievements.filter(a => a.unlocked);
-  const nextMilestone = data.achievements.find(a => !a.unlocked) || data.achievements[0];
 
   const getAchievementIcon = (id: string) => {
     switch (id) {
@@ -715,7 +747,7 @@ export const Dashboard: React.FC = () => {
             <div className="pt-6 flex flex-col md:flex-row md:items-center justify-between gap-6">
               <div>
                 <span className="text-xs uppercase tracking-wider font-semibold text-slate-400 block mb-1">
-                  {session.isIndefinite ? 'Continuous Mindful Time Elapsed' : 'Session Countdown Remaining'}
+                  {session.isIndefinite ? 'Time Elapsed' : 'Session Countdown Remaining'}
                 </span>
                 <div className="text-4xl sm:text-5xl font-light font-mono tracking-tight text-slate-900 dark:text-white drop-shadow-sm">
                   {formatTimeRemaining(timeValue)}
@@ -841,7 +873,7 @@ export const Dashboard: React.FC = () => {
         </section>
 
         {/* =========================================================================
-            SECTION 5: WEBSITE USAGE & DISTRACTION BREAKDOWN
+            SECTION 5: WEBSITE USAGE & ATTENTION SHARE (Category-Free)
         ========================================================================= */}
         <section
           id="section-progress"
@@ -884,9 +916,6 @@ export const Dashboard: React.FC = () => {
                         <span className="font-semibold text-slate-800 dark:text-slate-200 truncate">
                           {item.domain}
                         </span>
-                        <span className="text-[10px] text-slate-400 bg-white dark:bg-slate-700/80 px-2 py-0.5 rounded-full border border-slate-200/60 dark:border-slate-600/60">
-                          {item.category}
-                        </span>
                       </div>
                       <span className="font-mono text-slate-600 dark:text-slate-300 font-semibold shrink-0">
                         {formatDuration(item.timeSpentSeconds)} ({pct}%)
@@ -910,7 +939,7 @@ export const Dashboard: React.FC = () => {
             </div>
           </div>
 
-          {/* Distraction Category Breakdown */}
+          {/* Attention Share by Website (Category-Free) */}
           <div className={`p-6 sm:p-7 rounded-3xl border transition-all ${
             isDarkMode
               ? 'bg-[#131B2A] border-[#1F293D] shadow-subtle'
@@ -920,40 +949,35 @@ export const Dashboard: React.FC = () => {
               <div>
                 <h3 className="text-base font-semibold text-slate-900 dark:text-white tracking-tight flex items-center gap-2">
                   <Layers className="w-4 h-4 text-purple-500" />
-                  Distraction Breakdown
+                  Screen Time Distribution
                 </h3>
                 <p className="text-xs text-slate-500 dark:text-slate-400">
-                  Distribution of attention across digital categories.
+                  Proportion of focused browsing dedicated to each website.
                 </p>
               </div>
             </div>
 
             <div className="space-y-4">
-              {categoryStats.map(([cat, secs]) => {
-                const pct = totalBrowsingSeconds > 0
-                  ? Math.round((secs / totalBrowsingSeconds) * 100)
-                  : 0;
-                return (
-                  <div key={cat} className="space-y-1.5">
-                    <div className="flex items-center justify-between text-xs">
-                      <span className="font-medium text-slate-700 dark:text-slate-300">{cat}</span>
-                      <span className="font-mono text-slate-500 dark:text-slate-400">
-                        {formatDuration(secs)} ({pct}%)
-                      </span>
-                    </div>
-                    <div className="w-full bg-slate-100 dark:bg-slate-800 rounded-full h-2 overflow-hidden">
-                      <div
-                        className="bg-gradient-to-r from-purple-400 to-indigo-400 h-2 rounded-full transition-all duration-500"
-                        style={{ width: `${pct}%` }}
-                      />
-                    </div>
+              {topDomainShares.map(item => (
+                <div key={item.domain} className="space-y-1.5">
+                  <div className="flex items-center justify-between text-xs">
+                    <span className="font-semibold text-slate-700 dark:text-slate-300">{item.domain}</span>
+                    <span className="font-mono text-slate-500 dark:text-slate-400">
+                      {formatDuration(item.timeSpentSeconds)} • {item.pct}% share
+                    </span>
                   </div>
-                );
-              })}
+                  <div className="w-full bg-slate-100 dark:bg-slate-800 rounded-full h-2 overflow-hidden">
+                    <div
+                      className="bg-gradient-to-r from-indigo-400 to-purple-400 h-2 rounded-full transition-all duration-500"
+                      style={{ width: `${item.pct}%` }}
+                    />
+                  </div>
+                </div>
+              ))}
 
-              {categoryStats.length === 0 && (
+              {topDomainShares.length === 0 && (
                 <div className="py-8 text-center text-xs text-slate-400 italic">
-                  Category distribution will populate as you browse.
+                  Browsing distribution will display as you explore websites.
                 </div>
               )}
             </div>
@@ -961,7 +985,7 @@ export const Dashboard: React.FC = () => {
         </section>
 
         {/* =========================================================================
-            SECTION 6: WEBSITE RESTRICTIONS (Shield Rules)
+            SECTION 6: WEBSITE RESTRICTIONS (Category-Free Shield Rules)
         ========================================================================= */}
         <section
           id="section-restrictions"
@@ -987,7 +1011,7 @@ export const Dashboard: React.FC = () => {
               </p>
             </div>
 
-            {/* Add Website Form */}
+            {/* Add Website Form - Pure domain input, zero category selector */}
             <form onSubmit={handleAddSite} className="flex items-center gap-2">
               <input
                 type="text"
@@ -1000,24 +1024,11 @@ export const Dashboard: React.FC = () => {
                     : 'bg-slate-50 border-slate-200 text-slate-900 placeholder-slate-400'
                 }`}
               />
-              <select
-                value={newCategory}
-                onChange={e => setNewCategory(e.target.value as any)}
-                className={`px-2 py-2 text-xs rounded-xl border focus:outline-none ${
-                  isDarkMode ? 'bg-slate-800 border-slate-700 text-white' : 'bg-slate-50 border-slate-200 text-slate-900'
-                }`}
-              >
-                <option value="social">Social</option>
-                <option value="entertainment">Entertainment</option>
-                <option value="forums">Forums</option>
-                <option value="productivity">Productivity</option>
-                <option value="custom">Custom</option>
-              </select>
               <button
                 type="submit"
                 className="px-3.5 py-2 text-xs font-bold rounded-xl bg-indigo-500 hover:bg-indigo-600 text-white transition-all shadow-subtle cursor-pointer flex items-center gap-1"
               >
-                <Plus className="w-3.5 h-3.5" /> Add
+                <Plus className="w-3.5 h-3.5" /> Add Website
               </button>
             </form>
           </div>
@@ -1043,8 +1054,7 @@ export const Dashboard: React.FC = () => {
                       {site.domain}
                     </span>
                   </div>
-                  <div className="flex items-center gap-2 mt-1">
-                    <span className="text-[10px] text-slate-400 uppercase tracking-wider">{site.category}</span>
+                  <div className="mt-1">
                     <span className="text-[10px] font-mono text-rose-500 font-medium">
                       {site.blockedCount} deflections
                     </span>
@@ -1115,13 +1125,12 @@ export const Dashboard: React.FC = () => {
           {/* Minimalist Dual-Bar Chart */}
           <div className="h-48 flex items-end justify-between gap-3 pt-6 border-b border-slate-100 dark:border-slate-800">
             {weeklyChartData.map((d, i) => {
-              const maxScale = 120; // 120 mins scale
+              const maxScale = 120;
               const browsingHeight = Math.min(100, Math.max(12, Math.round((d.browsingMins / maxScale) * 100)));
               const offlineHeight = Math.min(100, Math.max(12, Math.round((d.offlineMins / maxScale) * 100)));
 
               return (
                 <div key={d.day} className="flex-1 flex flex-col items-center h-full justify-end group relative">
-                  {/* Tooltip on hover */}
                   <div className="absolute -top-10 opacity-0 group-hover:opacity-100 transition-opacity bg-slate-900 text-white text-[10px] px-2 py-1 rounded shadow pointer-events-none whitespace-nowrap z-10 font-mono">
                     Browsing: {d.browsingMins}m • Offline: {d.offlineMins}m
                   </div>
@@ -1180,7 +1189,6 @@ export const Dashboard: React.FC = () => {
               </p>
             </div>
 
-            {/* Current Streak Badge */}
             <div className="flex items-center gap-2 bg-amber-50 dark:bg-amber-950/60 text-amber-700 dark:text-amber-300 border border-amber-200/60 px-3.5 py-1.5 rounded-2xl text-xs font-semibold">
               <Flame className="w-4 h-4 fill-current text-amber-500" />
               <span>Active Mindful Streak Active</span>
@@ -1290,7 +1298,7 @@ export const Dashboard: React.FC = () => {
           {/* 3 Pillar Offline Recommendations */}
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
             {recommendations.map(rec => {
-              const alreadyPlanned = (present.activities || []).some(
+              const alreadyPlanned = userActivities.some(
                 a => a.title.toLowerCase() === rec.title.toLowerCase()
               );
 
@@ -1351,7 +1359,7 @@ export const Dashboard: React.FC = () => {
         </section>
 
         {/* =========================================================================
-            SECTION 10: QUICK ACTIONS & PLEDGES
+            SECTION 10: QUICK ACTIONS & PLEDGES & USER-ENTERED ACTIVITIES
         ========================================================================= */}
         <section className="grid grid-cols-1 lg:grid-cols-2 gap-6">
           {/* Active Pledges & Commitments */}
@@ -1443,7 +1451,7 @@ export const Dashboard: React.FC = () => {
             </div>
           </div>
 
-          {/* Planned Offline Activities */}
+          {/* Planned Offline Activities - Purely user-entered & freely untickable */}
           <div className={`p-6 sm:p-7 rounded-3xl border transition-all ${
             isDarkMode
               ? 'bg-[#131B2A] border-[#1F293D] shadow-subtle'
@@ -1456,20 +1464,71 @@ export const Dashboard: React.FC = () => {
                   Planned Offline Activities
                 </h3>
                 <p className="text-xs text-slate-500 dark:text-slate-400">
-                  Complete real-world activities to accumulate verified offline minutes.
+                  Purely user-entered. Tick or untick anytime to update offline credit.
                 </p>
               </div>
+
+              <button
+                onClick={() => setShowActivityForm(!showActivityForm)}
+                className="px-3 py-1.5 rounded-xl text-xs font-bold bg-emerald-50 text-emerald-700 border border-emerald-200 dark:bg-emerald-950/60 dark:text-emerald-300 cursor-pointer flex items-center gap-1"
+              >
+                <Plus className="w-3.5 h-3.5" /> {showActivityForm ? 'Close' : 'Add Activity'}
+              </button>
             </div>
 
+            {/* Custom Activity Creation Form */}
+            {showActivityForm && (
+              <form onSubmit={handleAddCustomActivity} className="p-4 mb-4 rounded-2xl bg-slate-50 dark:bg-slate-800/40 border border-slate-200 dark:border-slate-700 space-y-3">
+                <input
+                  type="text"
+                  placeholder="e.g. Park walk with sketchbook, Evening meditation"
+                  value={activityTitle}
+                  onChange={e => setActivityTitle(e.target.value)}
+                  className={`w-full px-3 py-2 text-xs rounded-xl border focus:outline-none ${
+                    isDarkMode ? 'bg-slate-800 border-slate-700 text-white' : 'bg-white border-slate-200 text-slate-900'
+                  }`}
+                />
+                <div className="flex items-center gap-2">
+                  <select
+                    value={activityPillar}
+                    onChange={e => setActivityPillar(e.target.value as PillarType)}
+                    className={`flex-1 px-2.5 py-1.5 text-xs rounded-xl border focus:outline-none ${
+                      isDarkMode ? 'bg-slate-800 border-slate-700 text-white' : 'bg-white border-slate-200 text-slate-900'
+                    }`}
+                  >
+                    <option value="MOVE">MOVE</option>
+                    <option value="DISCONNECT">DISCONNECT</option>
+                    <option value="RECONNECT">RECONNECT</option>
+                  </select>
+                  <input
+                    type="number"
+                    min="5"
+                    max="180"
+                    value={activityDuration}
+                    onChange={e => setActivityDuration(parseInt(e.target.value) || 30)}
+                    className={`w-20 px-2 py-1.5 text-xs font-mono rounded-xl border focus:outline-none ${
+                      isDarkMode ? 'bg-slate-800 border-slate-700 text-white' : 'bg-white border-slate-200 text-slate-900'
+                    }`}
+                  />
+                  <button
+                    type="submit"
+                    className="px-4 py-1.5 text-xs font-bold rounded-xl bg-emerald-500 hover:bg-emerald-600 text-white cursor-pointer"
+                  >
+                    Save
+                  </button>
+                </div>
+              </form>
+            )}
+
             <div className="space-y-3">
-              {present.activities.map(act => (
+              {userActivities.map(act => (
                 <div
                   key={act.id}
                   className={`p-3.5 rounded-2xl border flex items-center justify-between transition-all ${
                     act.completed
                       ? isDarkMode
-                        ? 'bg-emerald-950/30 border-emerald-900/40 opacity-70'
-                        : 'bg-emerald-50/50 border-emerald-100 opacity-70'
+                        ? 'bg-emerald-950/30 border-emerald-900/40 opacity-75'
+                        : 'bg-emerald-50/50 border-emerald-100 opacity-80'
                       : isDarkMode
                       ? 'bg-slate-800/40 border-slate-800'
                       : 'bg-slate-50 border-slate-100'
@@ -1477,12 +1536,13 @@ export const Dashboard: React.FC = () => {
                 >
                   <div className="flex items-center gap-3">
                     <button
+                      type="button"
                       onClick={() => handleCompleteActivity(act.id)}
-                      title={act.completed ? 'Completed' : 'Mark as completed'}
+                      title={act.completed ? 'Click to untick activity' : 'Click to mark as completed'}
                       className={`w-5 h-5 rounded-lg border flex items-center justify-center cursor-pointer transition-all ${
                         act.completed
-                          ? 'bg-emerald-500 border-emerald-500 text-white'
-                          : 'border-slate-300 dark:border-slate-600 hover:border-emerald-500'
+                          ? 'bg-emerald-500 border-emerald-500 text-white shadow-sm'
+                          : 'border-slate-300 dark:border-slate-600 hover:border-emerald-500 bg-white dark:bg-slate-800'
                       }`}
                     >
                       {act.completed && <Check className="w-3.5 h-3.5" />}
@@ -1492,18 +1552,28 @@ export const Dashboard: React.FC = () => {
                         {act.title}
                       </span>
                       <span className="text-[10px] text-slate-400 font-mono">
-                        +{act.durationMinutes} mins offline credit
+                        +{act.durationMinutes} mins offline credit {act.completed ? '(earned ✓)' : ''}
                       </span>
                     </div>
                   </div>
 
-                  <PillarBadge pillar={act.pillar} />
+                  <div className="flex items-center gap-2">
+                    <PillarBadge pillar={act.pillar} />
+                    <button
+                      type="button"
+                      onClick={() => handleRemoveActivity(act.id)}
+                      title="Delete activity"
+                      className="p-1 text-slate-400 hover:text-rose-500 rounded-lg transition-colors cursor-pointer"
+                    >
+                      <Trash2 className="w-3.5 h-3.5" />
+                    </button>
+                  </div>
                 </div>
               ))}
 
-              {present.activities.length === 0 && (
+              {userActivities.length === 0 && (
                 <div className="py-8 text-center text-xs text-slate-400 italic">
-                  No planned activities yet. Click "+ Plan Activity" under Weather & Discover.
+                  No planned activities yet. Click "+ Add Activity" above or "+ Plan Activity" under Weather & Discover.
                 </div>
               )}
             </div>

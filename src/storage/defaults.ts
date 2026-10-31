@@ -21,11 +21,7 @@ export const DEFAULT_CORE_STATE: CoreAppState = {
     { id: 'p_2', title: 'Deep focus without social feeds', pillar: 'DISCONNECT', targetMinutes: 60, isActive: true, createdAt: Date.now() - 43200000 },
     { id: 'p_3', title: 'Evening outdoor unwind', pillar: 'RECONNECT', targetMinutes: 45, isActive: true, createdAt: Date.now() - 21600000 },
   ],
-  activities: [
-    { id: 'act_1', title: 'Brisk 30-min walk in the park', pillar: 'MOVE', durationMinutes: 30, completed: false, createdAt: Date.now() },
-    { id: 'act_2', title: 'Read a physical book chapter', pillar: 'DISCONNECT', durationMinutes: 40, completed: false, createdAt: Date.now() },
-    { id: 'act_3', title: 'Outdoor sketching / journaling', pillar: 'RECONNECT', durationMinutes: 25, completed: false, createdAt: Date.now() },
-  ],
+  activities: [],
   blockedAttemptsTotal: 0,
 };
 

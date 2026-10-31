@@ -172,6 +172,7 @@ export type ExtensionMessage =
   | { type: 'EDIT_PLEDGE'; id: string; updates: Partial<Pledge> }
   | { type: 'ADD_ACTIVITY'; activity: Omit<OfflineActivity, 'id' | 'createdAt'> }
   | { type: 'COMPLETE_ACTIVITY'; id: string }
+  | { type: 'REMOVE_ACTIVITY'; id: string }
   | { type: 'REFRESH_WEATHER' }
   | { type: 'SET_THEME'; theme: 'system' | 'light' | 'dark' }
   | { type: 'RECORD_BLOCKED_TAB'; tabId: number; domain: string }
