@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Play, Pause, CheckCircle2, XCircle, Sparkles, Shield, Clock } from 'lucide-react';
+import { Play, Pause, CheckCircle2, XCircle, Sparkles, Shield, Clock, Power } from 'lucide-react';
 import { DetoxSession } from '../types';
 import { calculateRemainingSeconds, formatTimeRemaining } from '../services/session';
 
@@ -77,6 +77,15 @@ export const DetoxTimerCard: React.FC<DetoxTimerCardProps> = ({
 
   const selectedTotalSeconds = hours * 3600 + minutes * 60 + seconds;
 
+  const handleToggleOnOff = () => {
+    if (isActive) {
+      onCancel();
+    } else {
+      const totalSecs = selectedTotalSeconds > 0 ? selectedTotalSeconds : 1800;
+      onStart(totalSecs);
+    }
+  };
+
   // Compact View (Side Panel / Toolbar Popup)
   if (compact) {
     return (
@@ -87,7 +96,7 @@ export const DetoxTimerCard: React.FC<DetoxTimerCardProps> = ({
             : 'bg-white border-slate-200/80 text-slate-900 shadow-subtle'
         }`}
       >
-        {/* Header Status */}
+        {/* Header Status with On / Off button next to Set Disconnect Time */}
         <div className="flex items-center justify-between mb-3">
           <div className="flex items-center gap-2">
             <span
@@ -106,11 +115,28 @@ export const DetoxTimerCard: React.FC<DetoxTimerCardProps> = ({
             >
               {isActive ? 'Detox Active' : isPaused ? 'Detox Paused' : 'Set Disconnect Time'}
             </span>
+
+            {/* On / Off Button directly next to Set Disconnect Time */}
+            <button
+              type="button"
+              onClick={handleToggleOnOff}
+              title={isActive ? 'Detox is Active. Click to Turn OFF' : 'Detox is Inactive. Click to Turn ON'}
+              className={`flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[10px] font-bold transition-all cursor-pointer ${
+                isActive
+                  ? 'bg-emerald-500 hover:bg-emerald-600 text-white shadow-[0_0_10px_rgba(16,185,129,0.35)]'
+                  : isDark
+                  ? 'bg-slate-800 text-slate-400 hover:text-white border border-slate-700'
+                  : 'bg-slate-100 text-slate-600 hover:text-slate-900 border border-slate-200'
+              }`}
+            >
+              <Power className="w-2.5 h-2.5" />
+              <span>{isActive ? 'ON' : 'OFF'}</span>
+            </button>
           </div>
 
           {session && (
-            <span className={`text-[11px] font-medium ${isDark ? 'text-slate-400' : 'text-slate-400'}`}>
-              {progressPercent}% elapsed
+            <span className="text-[11px] font-medium text-slate-400">
+              {progressPercent}%
             </span>
           )}
         </div>
@@ -299,6 +325,23 @@ export const DetoxTimerCard: React.FC<DetoxTimerCardProps> = ({
             <h2 className={`text-lg font-semibold tracking-tight ${isDark ? 'text-white' : 'text-slate-900'}`}>
               {isActive ? 'Digital Detox in Progress' : isPaused ? 'Detox Paused' : 'Begin Digital Detox'}
             </h2>
+
+            {/* On / Off Button */}
+            <button
+              type="button"
+              onClick={handleToggleOnOff}
+              title={isActive ? 'Detox is Active. Click to Turn OFF' : 'Detox is Inactive. Click to Turn ON'}
+              className={`flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-bold transition-all cursor-pointer ml-1 ${
+                isActive
+                  ? 'bg-emerald-500 hover:bg-emerald-600 text-white shadow-[0_0_12px_rgba(16,185,129,0.4)]'
+                  : isDark
+                  ? 'bg-slate-800 text-slate-400 hover:text-white border border-slate-700'
+                  : 'bg-slate-100 text-slate-600 hover:text-slate-900 border border-slate-200'
+              }`}
+            >
+              <Power className="w-3.5 h-3.5" />
+              <span>{isActive ? 'ON' : 'OFF'}</span>
+            </button>
           </div>
           <p className="text-xs text-slate-400 max-w-md">
             {isActive
