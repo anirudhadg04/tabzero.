@@ -169,9 +169,11 @@ export const Dashboard: React.FC = () => {
         isDarkMode ? 'bg-[#0B0F19]' : 'bg-offline-bg'
       }`}>
         <div className="flex flex-col items-center gap-3">
-          <div className="w-10 h-10 rounded-2xl bg-indigo-500 text-white flex items-center justify-center font-bold text-sm tracking-wider shadow-subtle animate-pulse">
-            t0.
-          </div>
+          <img
+            src="icons/icon128.png"
+            alt="tabzero logo"
+            className="w-12 h-12 rounded-full object-cover shadow-lg animate-pulse"
+          />
           <span className="text-xs text-slate-400 font-medium tracking-wide">
             Entering tabzero. sanctuary...
           </span>

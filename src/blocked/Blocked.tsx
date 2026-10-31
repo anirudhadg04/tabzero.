@@ -467,15 +467,22 @@ export const BlockedIntervention: React.FC = () => {
         </div>
 
         {/* Minimalist Footnote */}
-        <p
-          className={`text-[11px] font-medium pt-1 ${
-            isDarkMode
-              ? 'text-slate-400 drop-shadow-[0_1px_4px_rgba(0,0,0,0.9)]'
-              : 'text-slate-600 drop-shadow-[0_1px_4px_rgba(255,255,255,0.8)]'
-          }`}
-        >
-          tabzero. — Life happens beyond the screen.
-        </p>
+        <div className="flex items-center gap-1.5 pt-1">
+          <img
+            src="icons/icon16.png"
+            alt="tabzero logo"
+            className="w-3.5 h-3.5 rounded-full object-cover"
+          />
+          <p
+            className={`text-[11px] font-medium ${
+              isDarkMode
+                ? 'text-slate-400 drop-shadow-[0_1px_4px_rgba(0,0,0,0.9)]'
+                : 'text-slate-600 drop-shadow-[0_1px_4px_rgba(255,255,255,0.8)]'
+            }`}
+          >
+            tabzero. — Life happens beyond the screen.
+          </p>
+        </div>
       </div>
     </div>
   );

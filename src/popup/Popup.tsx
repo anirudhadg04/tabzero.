@@ -186,13 +186,11 @@ export const Popup: React.FC = () => {
         }`}
       >
         <div className="flex items-center gap-2">
-          <div
-            className={`w-6 h-6 rounded-lg flex items-center justify-center font-bold text-[10px] tracking-tight ${
-              isDarkMode ? 'bg-white text-slate-900 shadow-sm' : 'bg-slate-900 text-white'
-            }`}
-          >
-            t0.
-          </div>
+          <img
+            src="icons/icon48.png"
+            alt="tabzero logo"
+            className="w-6 h-6 rounded-full object-cover shadow-sm ring-1 ring-black/5 dark:ring-white/10"
+          />
           <div>
             <h2 className="text-xs font-bold tracking-tight">tabzero.</h2>
             <p className={`text-[10px] ${isDarkMode ? 'text-slate-400' : 'text-slate-400'}`}>

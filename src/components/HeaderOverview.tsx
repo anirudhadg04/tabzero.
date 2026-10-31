@@ -65,11 +65,11 @@ export const HeaderOverview: React.FC<HeaderOverviewProps> = ({
       }`}>
         <div>
           <div className="flex items-center gap-3">
-            <div className={`w-8 h-8 rounded-xl flex items-center justify-center font-bold text-xs tracking-wider shadow-subtle ${
-              isDark ? 'bg-white text-slate-900' : 'bg-slate-900 text-white'
-            }`}>
-              t0.
-            </div>
+            <img
+              src="icons/icon48.png"
+              alt="tabzero logo"
+              className="w-8 h-8 rounded-full object-cover shadow-sm ring-1 ring-black/5 dark:ring-white/10"
+            />
             <div>
               <h1 className={`text-xl font-bold tracking-tight flex items-center gap-2 ${
                 isDark ? 'text-white' : 'text-slate-950'
