@@ -1,10 +1,10 @@
 import React, { useEffect, useRef, useState } from 'react';
-import { ArrowLeft, Clock, Sparkles, Flag, Wind, Sun, Cloud, CloudRain } from 'lucide-react';
+import { ArrowLeft, Clock, Sparkles, Flag, Wind, Sun, Cloud, CloudRain, CloudOff } from 'lucide-react';
 import { DetoxSession, WeatherData, ActivityRecommendation } from '../types';
 import { getStorageData } from '../storage';
 import { sendExtensionMessage, subscribeToStorage } from '../services/bridge';
 import { calculateRemainingSeconds, formatTimeRemaining } from '../services/session';
-import { generateRecommendations } from '../weather';
+import { formatWeather, generateRecommendations } from '../weather';
 import { PillarBadge } from '../components/PillarBadge';
 
 // Living Nature Ambient Animation Canvas (Drifting Leaves, Twinkling Stars, Floating Starlight Dust)
@@ -258,16 +258,9 @@ export const BlockedIntervention: React.FC = () => {
     window.location.href = 'dashboard.html';
   };
 
+  const formattedWeather = formatWeather(weather);
   const recommendations = generateRecommendations(weather);
   const topRecommendation: ActivityRecommendation = recommendations[0];
-
-  const getWeatherIcon = () => {
-    if (!weather) return <Sun className="w-4 h-4 text-amber-400" />;
-    const c = weather.condition.toLowerCase();
-    if (c.includes('rain') || c.includes('drizzle')) return <CloudRain className="w-4 h-4 text-sky-400" />;
-    if (c.includes('cloud') || c.includes('overcast')) return <Cloud className="w-4 h-4 text-slate-300" />;
-    return <Sun className="w-4 h-4 text-amber-400" />;
-  };
 
   return (
     <div className="relative min-h-screen w-full flex flex-col items-center justify-center p-4 sm:p-6 overflow-hidden select-none font-sans">
@@ -349,21 +342,35 @@ export const BlockedIntervention: React.FC = () => {
           </p>
         </div>
 
-        {/* Weather & Location Pill */}
-        {weather && (
-          <div
-            className={`inline-flex items-center gap-2 px-3.5 py-1 rounded-2xl border text-xs font-medium shadow-sm backdrop-blur-md transition-all duration-300 ${
-              isDarkMode
-                ? 'bg-slate-950/40 border-white/15 text-slate-200'
-                : 'bg-white/75 border-white/80 text-slate-800'
-            }`}
-          >
-            {getWeatherIcon()}
-            <span>{weather.temperature}°C {weather.condition}</span>
-            <span className="opacity-40">•</span>
-            <span>{weather.city}</span>
-          </div>
-        )}
+        {/* Weather & Location Pill (Synchronized with Open-Meteo) */}
+        <div
+          className={`inline-flex items-center gap-2 px-3.5 py-1.5 rounded-2xl border text-xs font-medium shadow-sm backdrop-blur-md transition-all duration-300 ${
+            isDarkMode
+              ? 'bg-slate-950/40 border-white/15 text-slate-200'
+              : 'bg-white/75 border-white/80 text-slate-800'
+          }`}
+        >
+          {formattedWeather ? (
+            <>
+              <span className="text-sm leading-none select-none" role="img" aria-label={formattedWeather.description}>
+                {formattedWeather.emoji}
+              </span>
+              <span>{formattedWeather.temperatureText} · {formattedWeather.description}</span>
+              <span className="opacity-40">•</span>
+              <span>{formattedWeather.locationText}</span>
+              {formattedWeather.isCached && (
+                <span className="text-[10px] opacity-75 bg-black/10 dark:bg-white/10 px-1.5 py-0.5 rounded">
+                  Cached
+                </span>
+              )}
+            </>
+          ) : (
+            <>
+              <CloudOff className="w-3.5 h-3.5 opacity-60" />
+              <span>Weather unavailable</span>
+            </>
+          )}
+        </div>
 
         {/* Translucent Glass Countdown Timer Card */}
         {session && session.status === 'active' && (
@@ -416,9 +423,7 @@ export const BlockedIntervention: React.FC = () => {
                 isDarkMode ? 'text-slate-300' : 'text-slate-700'
               }`}
             >
-              {isDarkMode
-                ? 'Capture nature and beautiful night skies with your own eyes.'
-                : topRecommendation.description}
+              {topRecommendation.description}
             </p>
           </div>
         )}

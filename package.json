@@ -9,7 +9,8 @@
     "server": "node backend/server.js",
     "test:history": "tsx scripts/test-undo-redo.ts",
     "test:backend": "tsx scripts/test-backend.ts",
-    "test": "tsx scripts/test-undo-redo.ts && tsx scripts/test-backend.ts",
+    "test:weather": "tsx scripts/test-weather-sync.ts",
+    "test": "tsx scripts/test-undo-redo.ts && tsx scripts/test-backend.ts && tsx scripts/test-weather-sync.ts",
     "preview": "vite preview"
   },
   "dependencies": {

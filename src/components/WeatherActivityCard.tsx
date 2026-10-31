@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
-import { Cloud, Sun, CloudRain, Wind, Droplets, RefreshCw, Plus, Check } from 'lucide-react';
+import { RefreshCw, Plus, Check, CloudOff, Wind, Droplets } from 'lucide-react';
 import { ActivityRecommendation, WeatherData } from '../types';
-import { generateRecommendations } from '../weather';
+import { formatWeather, generateRecommendations } from '../weather';
 import { PillarBadge } from './PillarBadge';
 
 interface WeatherActivityCardProps {
@@ -36,15 +36,9 @@ export const WeatherActivityCard: React.FC<WeatherActivityCardProps> = ({
     }, 2000);
   };
 
+  // Centralized single source of truth for normalized weather
+  const formatted = formatWeather(weather);
   const recommendations = generateRecommendations(weather);
-
-  const getWeatherIcon = () => {
-    if (!weather) return <Sun className="w-5 h-5 text-amber-500" />;
-    const c = weather.condition.toLowerCase();
-    if (c.includes('rain') || c.includes('drizzle')) return <CloudRain className="w-5 h-5 text-sky-500" />;
-    if (c.includes('cloud') || c.includes('overcast')) return <Cloud className="w-5 h-5 text-slate-500" />;
-    return <Sun className="w-5 h-5 text-amber-500" />;
-  };
 
   if (compact) {
     return (
@@ -56,24 +50,36 @@ export const WeatherActivityCard: React.FC<WeatherActivityCardProps> = ({
         }`}
       >
         <div className="flex items-center justify-between mb-3">
-          <div className="flex items-center gap-2">
-            {getWeatherIcon()}
+          <div className="flex items-center gap-2.5">
+            {formatted ? (
+              <span className="text-xl leading-none select-none" role="img" aria-label={formatted.description}>
+                {formatted.emoji}
+              </span>
+            ) : (
+              <CloudOff className={`w-5 h-5 ${isDark ? 'text-slate-500' : 'text-slate-400'}`} />
+            )}
             <div>
               <h4 className={`text-xs font-semibold ${isDark ? 'text-white' : 'text-slate-800'}`}>
-                {weather ? `${weather.temperature}°C, ${weather.condition}` : 'Outdoor Forecast'}
+                {formatted ? `${formatted.temperatureText} · ${formatted.description}` : 'Weather unavailable'}
               </h4>
-              <p className={`text-[10px] ${isDark ? 'text-slate-400' : 'text-slate-400'}`}>
-                {weather?.city || 'Detecting Location...'}
+              <p className={`text-[10px] flex items-center gap-1 ${isDark ? 'text-slate-400' : 'text-slate-400'}`}>
+                <span>{formatted ? formatted.locationText : 'Forecast not retrieved'}</span>
+                {formatted?.isCached && (
+                  <span className="opacity-75 font-medium text-[9px] px-1 py-0.2 bg-slate-200 dark:bg-slate-800 rounded">
+                    Cached
+                  </span>
+                )}
               </p>
             </div>
           </div>
           <button
             onClick={handleRefresh}
-            className={`p-1.5 rounded-lg transition-colors ${
+            title="Refresh Open-Meteo live weather"
+            className={`p-1.5 rounded-lg transition-colors cursor-pointer ${
               isDark ? 'text-slate-400 hover:text-white' : 'text-slate-400 hover:text-slate-600'
             }`}
           >
-            <RefreshCw className={`w-3.5 h-3.5 ${refreshing ? 'animate-spin' : ''}`} />
+            <RefreshCw className={`w-3.5 h-3.5 ${refreshing ? 'animate-spin text-indigo-400' : ''}`} />
           </button>
         </div>
 
@@ -95,7 +101,7 @@ export const WeatherActivityCard: React.FC<WeatherActivityCardProps> = ({
             </div>
             <button
               onClick={() => handleAdd(recommendations[0])}
-              className={`px-2 py-1 text-[11px] font-medium rounded-lg border transition-all shrink-0 ${
+              className={`px-2 py-1 text-[11px] font-medium rounded-lg border transition-all shrink-0 cursor-pointer ${
                 isDark
                   ? 'bg-slate-800 hover:bg-slate-700 text-slate-200 border-slate-700'
                   : 'bg-white hover:bg-slate-100 text-slate-700 border-slate-200'
@@ -120,6 +126,11 @@ export const WeatherActivityCard: React.FC<WeatherActivityCardProps> = ({
             <span className="text-[10px] font-semibold bg-emerald-50 text-emerald-700 border border-emerald-200/60 px-2 py-0.5 rounded-full">
               Open-Meteo Live
             </span>
+            {formatted?.isCached && (
+              <span className="text-[10px] font-semibold bg-amber-50 text-amber-700 border border-amber-200/60 px-2 py-0.5 rounded-full">
+                Cached {formatted.observationTimeText && `(${formatted.observationTimeText})`}
+              </span>
+            )}
           </div>
           <p className="text-xs text-slate-500">
             Real atmospheric conditions calibrated to meaningful real-world offline activities.
@@ -127,16 +138,18 @@ export const WeatherActivityCard: React.FC<WeatherActivityCardProps> = ({
         </div>
 
         <div className="flex items-center gap-3">
-          {weather ? (
+          {formatted ? (
             <div className="flex items-center gap-3 bg-slate-50 border border-slate-200/80 px-3.5 py-2 rounded-xl">
-              <div className="flex items-center gap-2">
-                {getWeatherIcon()}
+              <div className="flex items-center gap-2.5">
+                <span className="text-2xl leading-none select-none" role="img" aria-label={formatted.description}>
+                  {formatted.emoji}
+                </span>
                 <div>
-                  <div className="flex items-baseline gap-1">
-                    <span className="text-base font-semibold text-slate-900">{weather.temperature}°C</span>
-                    <span className="text-xs text-slate-500 font-medium">{weather.condition}</span>
+                  <div className="flex items-baseline gap-1.5">
+                    <span className="text-base font-semibold text-slate-900">{formatted.temperatureText}</span>
+                    <span className="text-xs text-slate-600 font-medium">{formatted.description}</span>
                   </div>
-                  <span className="text-[11px] text-slate-400">{weather.city}</span>
+                  <span className="text-[11px] text-slate-400">{formatted.locationText}</span>
                 </div>
               </div>
 
@@ -144,15 +157,18 @@ export const WeatherActivityCard: React.FC<WeatherActivityCardProps> = ({
 
               <div className="flex items-center gap-3 text-slate-500 text-xs">
                 <span className="flex items-center gap-1" title="Relative Humidity">
-                  <Droplets className="w-3.5 h-3.5 text-sky-400" /> {weather.humidity}%
+                  <Droplets className="w-3.5 h-3.5 text-sky-400" /> {formatted.humidity}%
                 </span>
                 <span className="flex items-center gap-1" title="Wind Speed">
-                  <Wind className="w-3.5 h-3.5 text-slate-400" /> {weather.windSpeed} km/h
+                  <Wind className="w-3.5 h-3.5 text-slate-400" /> {formatted.windSpeed} km/h
                 </span>
               </div>
             </div>
           ) : (
-            <div className="text-xs text-slate-400 italic">Fetching Open-Meteo...</div>
+            <div className="flex items-center gap-2 text-xs text-slate-400 italic bg-slate-50 border border-slate-200 px-3 py-2 rounded-xl">
+              <CloudOff className="w-4 h-4 text-slate-400" />
+              <span>Weather unavailable</span>
+            </div>
           )}
 
           <button

@@ -27,7 +27,7 @@ app.get('/api/weather', async (req, res) => {
   try {
     const lat = req.query.lat || '12.9716';
     const lon = req.query.lon || '77.5946';
-    const url = `https://api.open-meteo.com/v1/forecast?latitude=${lat}&longitude=${lon}&current=temperature_2m,relative_humidity_2m,precipitation,weather_code,wind_speed_10m&hourly=precipitation_probability&forecast_days=1`;
+    const url = `https://api.open-meteo.com/v1/forecast?latitude=${lat}&longitude=${lon}&current=temperature_2m,relative_humidity_2m,precipitation,weather_code,wind_speed_10m,is_day&hourly=precipitation_probability&forecast_days=1`;
 
     const weatherRes = await fetch(url);
     if (!weatherRes.ok) {

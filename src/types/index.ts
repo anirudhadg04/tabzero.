@@ -72,6 +72,37 @@ export interface WeatherData {
   latitude: number;
   longitude: number;
   fetchedAt: number;
+  isDay?: boolean;
+  time?: string;
+  isCached?: boolean;
+}
+
+export type WeatherCategory =
+  | 'clear'
+  | 'cloudy'
+  | 'rain'
+  | 'thunderstorm'
+  | 'very_hot'
+  | 'pleasant'
+  | 'cold'
+  | 'fog';
+
+export interface FormattedWeather {
+  temperatureText: string;
+  temperatureValue: number;
+  description: string;
+  emoji: string;
+  displayText: string;
+  locationText: string;
+  observationTimeText: string;
+  isDay: boolean;
+  isCached: boolean;
+  weatherCode: number;
+  humidity: number;
+  windSpeed: number;
+  precipitation: number;
+  isSafeForOutdoors: boolean;
+  weatherCategory: WeatherCategory;
 }
 
 export interface ActivityRecommendation {
