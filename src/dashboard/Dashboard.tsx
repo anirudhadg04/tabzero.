@@ -662,19 +662,17 @@ export const Dashboard: React.FC = () => {
                 />
                 <h2 className="text-xl font-bold tracking-tight text-slate-900 dark:text-white">
                   {isActive
-                    ? session?.isIndefinite
-                      ? 'Permanent Digital Detox Active'
-                      : 'Digital Detox in Progress'
+                    ? 'Digital Detox in Progress'
                     : isPaused
                     ? 'Detox Session Paused'
                     : 'Active Focus Sanctuary'}
                 </h2>
 
-                {/* Permanent On / Off Button */}
+                {/* On / Off Button */}
                 <button
                   type="button"
                   onClick={handleToggleOnOff}
-                  title={isActive ? 'Detox is Active. Click to Turn OFF' : 'Click to Turn ON (Permanent until turned OFF)'}
+                  title={isActive ? 'Detox is Active. Click to Turn OFF' : 'Click to Turn ON'}
                   className={`flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-bold transition-all cursor-pointer ${
                     isActive
                       ? 'bg-emerald-500 hover:bg-emerald-600 text-white shadow-[0_0_12px_rgba(16,185,129,0.4)]'
@@ -690,10 +688,8 @@ export const Dashboard: React.FC = () => {
 
               <p className="text-xs text-slate-500 dark:text-slate-400 max-w-lg">
                 {isActive
-                  ? session?.isIndefinite
-                    ? 'Permanent protection is active. Distracting websites remain shielded until you turn it OFF.'
-                    : 'Restricted sites are actively redirected to peaceful nature. Breathe deep and embrace the present moment.'
-                  : 'Start a timed detox or turn ON permanent shielding to deflect distraction loops.'}
+                  ? 'Restricted sites are actively redirected to peaceful nature. Breathe deep and embrace the present moment.'
+                  : 'Start a timed detox or turn ON shielding to deflect distraction loops.'}
               </p>
             </div>
 

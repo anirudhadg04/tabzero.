@@ -398,16 +398,11 @@ export const BlockedIntervention: React.FC = () => {
               }`}
             >
               <Clock className="w-3.5 h-3.5" />
-              <span>{session.isIndefinite ? 'Permanent Shield Active' : 'Session Remaining'}</span>
+              <span>Session Remaining</span>
             </div>
             <div className="font-mono text-4xl sm:text-5xl font-light tracking-tight drop-shadow-sm">
               {formatTimeRemaining(remainingSeconds)}
             </div>
-            {session.isIndefinite && (
-              <p className="text-[11px] text-emerald-400 font-medium mt-1 drop-shadow-sm">
-                Active until manually turned OFF in tabzero.
-              </p>
-            )}
           </div>
         )}
 
