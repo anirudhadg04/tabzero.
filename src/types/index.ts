@@ -146,6 +146,9 @@ export interface OfflineStorageSchema {
   };
   lastActiveTimestamp: number;
   trackingActive: boolean;
+  themePreference?: 'system' | 'light' | 'dark';
+  lastBlockedDomain?: string;
+  tabDestinations?: Record<number, string>;
 }
 
 // Message types between UI & Background
@@ -170,4 +173,6 @@ export type ExtensionMessage =
   | { type: 'ADD_ACTIVITY'; activity: Omit<OfflineActivity, 'id' | 'createdAt'> }
   | { type: 'COMPLETE_ACTIVITY'; id: string }
   | { type: 'REFRESH_WEATHER' }
+  | { type: 'SET_THEME'; theme: 'system' | 'light' | 'dark' }
+  | { type: 'RECORD_BLOCKED_TAB'; tabId: number; domain: string }
   | { type: 'OPEN_DASHBOARD' };

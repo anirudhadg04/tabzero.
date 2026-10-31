@@ -57,21 +57,41 @@ async function purgeRestrictedTabs(sites: RestrictedSite[]) {
 async function unblockAndRefreshTabs() {
   if (typeof chrome === 'undefined' || !chrome.tabs) return;
   try {
+    const data = await getStorageData();
     const tabs = await chrome.tabs.query({});
     for (const tab of tabs) {
       if (!tab.id || !tab.url) continue;
       if (tab.url.includes('blocked.html')) {
+        let domain: string | null = null;
         try {
           const parsed = new URL(tab.url);
-          const domain = parsed.searchParams.get('domain');
-          if (domain) {
-            console.log(`[tabzero Restore] Restoring tab ${tab.id} to https://${domain}`);
-            chrome.tabs.update(tab.id, { url: `https://${domain}` });
-          } else {
-            chrome.tabs.reload(tab.id);
-          }
+          domain = parsed.searchParams.get('domain');
         } catch {
-          chrome.tabs.reload(tab.id);
+          // ignore parse error
+        }
+
+        if (!domain && tab.id && data.tabDestinations && data.tabDestinations[tab.id]) {
+          domain = data.tabDestinations[tab.id];
+        }
+
+        if (!domain && data.lastBlockedDomain) {
+          domain = data.lastBlockedDomain;
+        }
+
+        if (!domain && data.history.present.restrictedSites.length > 0) {
+          domain = data.history.present.restrictedSites[0].domain;
+        }
+
+        if (domain) {
+          const clean = extractRootDomain(domain);
+          const targetUrl = `https://${clean}`;
+          console.log(`[tabzero Restore] Restoring blocked tab ${tab.id} to ${targetUrl}`);
+          chrome.tabs.update(tab.id, { url: targetUrl });
+        } else {
+          // If no specific domain found, navigate back in browser history
+          chrome.tabs.goBack(tab.id).catch(() => {
+            chrome.tabs.update(tab.id!, { url: 'https://google.com' });
+          });
         }
       }
     }
@@ -178,6 +198,8 @@ if (chrome.webNavigation && chrome.webNavigation.onBeforeNavigate) {
 
       matchedSite.blockedCount += 1;
       data.history.present.blockedAttemptsTotal += 1;
+      data.tabDestinations = { ...(data.tabDestinations || {}), [details.tabId]: rootDomain };
+      data.lastBlockedDomain = rootDomain;
       data.achievements = evaluateAchievements(data.achievements, data.history.present);
       await setStorageData(data);
 
@@ -208,6 +230,17 @@ chrome.tabs.onUpdated.addListener(async (tabId, changeInfo, tab) => {
     currentActiveUrl = changeInfo.url;
     lastTrackedTimestamp = Date.now();
     checkRestrictedNavigation(changeInfo.url, tabId);
+
+    // If redirected by declarativeNetRequest to blocked.html without domain param, enrich with domain
+    if (changeInfo.url.includes('blocked.html') && !changeInfo.url.includes('?domain=')) {
+      const data = await getStorageData();
+      const domain = data.tabDestinations?.[tabId] || data.lastBlockedDomain || data.history.present.restrictedSites[0]?.domain;
+      if (domain) {
+        chrome.tabs.update(tabId, {
+          url: chrome.runtime.getURL(`blocked.html?domain=${encodeURIComponent(extractRootDomain(domain))}`)
+        });
+      }
+    }
   }
 });
 
@@ -471,6 +504,21 @@ chrome.runtime.onMessage.addListener((message: ExtensionMessage, sender, sendRes
         } catch (e: any) {
           sendResponse({ success: false, error: e.message, data });
         }
+        break;
+      }
+
+      case 'SET_THEME': {
+        data.themePreference = message.theme;
+        await setStorageData(data);
+        sendResponse({ success: true, data });
+        break;
+      }
+
+      case 'RECORD_BLOCKED_TAB': {
+        data.tabDestinations = { ...(data.tabDestinations || {}), [message.tabId]: message.domain };
+        data.lastBlockedDomain = message.domain;
+        await setStorageData(data);
+        sendResponse({ success: true, data });
         break;
       }
 

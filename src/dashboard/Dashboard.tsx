@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { ActivityRecommendation, OfflineStorageSchema, Pledge, OfflineActivity, RestrictedSite } from '../types';
+import { OfflineStorageSchema, RestrictedSite, Pledge, OfflineActivity, ActivityRecommendation } from '../types';
 import { getStorageData } from '../storage';
 import { sendExtensionMessage, subscribeToStorage } from '../services/bridge';
 import { HeaderOverview } from '../components/HeaderOverview';
@@ -14,12 +14,31 @@ import { INITIAL_STORAGE } from '../storage/defaults';
 export const Dashboard: React.FC = () => {
   const [data, setData] = useState<OfflineStorageSchema>(INITIAL_STORAGE);
   const [loading, setLoading] = useState(true);
+  const [systemIsDark, setSystemIsDark] = useState<boolean>(() => {
+    if (typeof window !== 'undefined' && window.matchMedia) {
+      return window.matchMedia('(prefers-color-scheme: dark)').matches;
+    }
+    return false;
+  });
+
+  // Dynamic system theme listener
+  useEffect(() => {
+    if (typeof window !== 'undefined' && window.matchMedia) {
+      const mediaQuery = window.matchMedia('(prefers-color-scheme: dark)');
+      const listener = (e: MediaQueryListEvent) => setSystemIsDark(e.matches);
+      mediaQuery.addEventListener('change', listener);
+      return () => mediaQuery.removeEventListener('change', listener);
+    }
+  }, []);
 
   useEffect(() => {
-    // Initial fetch
     getStorageData().then(d => {
       setData(d);
       setLoading(false);
+      // Auto refresh weather if null
+      if (!d.weather) {
+        sendExtensionMessage({ type: 'REFRESH_WEATHER' }).then(setData).catch(() => {});
+      }
     });
 
     // Real-time synchronization
@@ -29,6 +48,9 @@ export const Dashboard: React.FC = () => {
 
     return () => unsubscribe();
   }, []);
+
+  const themePref = data.themePreference || 'system';
+  const isDarkMode = themePref === 'dark' ? true : themePref === 'light' ? false : systemIsDark;
 
   const handleUndo = async () => {
     const updated = await sendExtensionMessage({ type: 'TRIGGER_UNDO' });
@@ -143,9 +165,11 @@ export const Dashboard: React.FC = () => {
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-offline-bg flex items-center justify-center">
+      <div className={`min-h-screen flex items-center justify-center ${
+        isDarkMode ? 'bg-[#0B0F19]' : 'bg-offline-bg'
+      }`}>
         <div className="flex flex-col items-center gap-3">
-          <div className="w-10 h-10 rounded-2xl bg-slate-900 text-white flex items-center justify-center font-bold text-sm tracking-wider shadow-subtle animate-pulse-subtle">
+          <div className="w-10 h-10 rounded-2xl bg-indigo-500 text-white flex items-center justify-center font-bold text-sm tracking-wider shadow-subtle animate-pulse">
             t0.
           </div>
           <span className="text-xs text-slate-400 font-medium tracking-wide">
@@ -159,15 +183,18 @@ export const Dashboard: React.FC = () => {
   const { present } = data.history;
 
   return (
-    <div className="min-h-screen bg-offline-bg text-offline-text py-8 px-4 sm:px-6 lg:px-12 selection:bg-indigo-100">
+    <div className={`min-h-screen py-8 px-4 sm:px-6 lg:px-12 transition-colors duration-300 ${
+      isDarkMode ? 'bg-[#0B0F19] text-slate-100' : 'bg-offline-bg text-offline-text'
+    }`}>
       <div className="max-w-6xl mx-auto space-y-8">
-        {/* 1. Header & Overview Metrics */}
+        {/* 1. Header & Overview Metrics (HealthTech MVP removed, exact 4 metrics retained) */}
         <HeaderOverview
           data={data}
           onUndo={handleUndo}
           onRedo={handleRedo}
           onSetDailyGoal={handleSetDailyGoal}
           isDashboard={true}
+          isDark={isDarkMode}
         />
 
         {/* 2. Detox Focus Timer */}
@@ -179,14 +206,16 @@ export const Dashboard: React.FC = () => {
           onComplete={handleCompleteSession}
           onCancel={handleCancelSession}
           compact={false}
+          isDark={isDarkMode}
         />
 
-        {/* 3. Open-Meteo Weather & 3 Pillars Recommendations */}
+        {/* 3. Open-Meteo Weather & 3 Pillars Recommendations (Integrated with Plan Activity) */}
         <WeatherActivityCard
           weather={data.weather}
           onRefreshWeather={handleRefreshWeather}
           onAddActivity={handleAddWeatherActivity}
           compact={false}
+          isDark={isDarkMode}
         />
 
         {/* 4. Restricted Websites Shield Management */}
@@ -196,6 +225,7 @@ export const Dashboard: React.FC = () => {
           onRemoveSite={handleRemoveSite}
           onToggleSite={handleToggleSite}
           compact={false}
+          isDark={isDarkMode}
         />
 
         {/* 5. Pledges & Planned Activities */}
@@ -206,6 +236,7 @@ export const Dashboard: React.FC = () => {
           onAddActivity={handleAddActivity}
           onCompleteActivity={handleCompleteActivity}
           compact={false}
+          isDark={isDarkMode}
         />
 
         {/* 6. Milestones & Achievements */}
@@ -218,12 +249,14 @@ export const Dashboard: React.FC = () => {
         />
 
         {/* Footer */}
-        <footer className="pt-8 pb-12 text-center text-xs text-slate-400 border-t border-slate-200/80">
-          <p className="font-medium text-slate-600">tabzero. — Digital Detox Browser Extension</p>
+        <footer className={`pt-8 pb-12 text-center text-xs border-t transition-colors ${
+          isDark ? 'border-[#1F293D] text-slate-500' : 'border-slate-200/80 text-slate-400'
+        }`}>
+          <p className="font-medium text-slate-400">tabzero. — Digital Detox Browser Extension</p>
           <p className="mt-1">
             Life happens beyond the screen. Move more. Scroll less. Live more.
           </p>
-          <p className="mt-1 text-[11px] text-slate-400">
+          <p className="mt-1 text-[11px] text-slate-500">
             IEEE Computer Society Hackathon • Team CodeNova • Manifest V3 Compliant
           </p>
         </footer>

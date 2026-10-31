@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { ExternalLink, Sparkles } from 'lucide-react';
+import { ExternalLink, Sparkles, Moon, Sun, Monitor } from 'lucide-react';
 import { OfflineStorageSchema, RestrictedSite, ActivityRecommendation } from '../types';
 import { getStorageData } from '../storage';
 import { sendExtensionMessage, subscribeToStorage } from '../services/bridge';
@@ -12,18 +12,18 @@ import { INITIAL_STORAGE } from '../storage/defaults';
 export const Popup: React.FC = () => {
   const [data, setData] = useState<OfflineStorageSchema>(INITIAL_STORAGE);
   const [loading, setLoading] = useState(true);
-  const [isDarkMode, setIsDarkMode] = useState<boolean>(() => {
+  const [systemIsDark, setSystemIsDark] = useState<boolean>(() => {
     if (typeof window !== 'undefined' && window.matchMedia) {
       return window.matchMedia('(prefers-color-scheme: dark)').matches;
     }
     return false;
   });
 
-  // Dynamic system theme detection for side panel / popup
+  // Dynamic system theme listener
   useEffect(() => {
     if (typeof window !== 'undefined' && window.matchMedia) {
       const mediaQuery = window.matchMedia('(prefers-color-scheme: dark)');
-      const listener = (e: MediaQueryListEvent) => setIsDarkMode(e.matches);
+      const listener = (e: MediaQueryListEvent) => setSystemIsDark(e.matches);
       mediaQuery.addEventListener('change', listener);
       return () => mediaQuery.removeEventListener('change', listener);
     }
@@ -33,6 +33,10 @@ export const Popup: React.FC = () => {
     getStorageData().then(d => {
       setData(d);
       setLoading(false);
+      // Auto-refresh weather if missing
+      if (!d.weather) {
+        sendExtensionMessage({ type: 'REFRESH_WEATHER' }).then(setData).catch(() => {});
+      }
     });
 
     const unsubscribe = subscribeToStorage((updated) => {
@@ -41,6 +45,16 @@ export const Popup: React.FC = () => {
 
     return () => unsubscribe();
   }, []);
+
+  const themePref = data.themePreference || 'system';
+  const isDarkMode = themePref === 'dark' ? true : themePref === 'light' ? false : systemIsDark;
+
+  const handleToggleTheme = async () => {
+    const nextTheme: 'system' | 'light' | 'dark' =
+      themePref === 'system' ? 'dark' : themePref === 'dark' ? 'light' : 'system';
+    const updated = await sendExtensionMessage({ type: 'SET_THEME', theme: nextTheme });
+    setData(updated);
+  };
 
   const handleOpenDashboard = () => {
     sendExtensionMessage({ type: 'OPEN_DASHBOARD' });
@@ -61,14 +75,6 @@ export const Popup: React.FC = () => {
       type: 'SESSION_START',
       durationSeconds: totalSeconds,
       durationMinutes: Math.max(1, Math.round(totalSeconds / 60)),
-    });
-    setData(updated);
-  };
-
-  const handleToggleShield = async (enabled: boolean) => {
-    const updated = await sendExtensionMessage({
-      type: 'TOGGLE_SHIELD',
-      enabled,
     });
     setData(updated);
   };
@@ -144,14 +150,15 @@ export const Popup: React.FC = () => {
           isDarkMode ? 'bg-[#0B0F19] text-slate-400' : 'bg-offline-bg text-slate-400'
         }`}
       >
-        Loading tabzero...
+        <div className="flex items-center gap-2">
+          <div className="w-5 h-5 rounded-lg bg-indigo-500 animate-spin" />
+          <span>Opening tabzero...</span>
+        </div>
       </div>
     );
   }
 
   const { present } = data.history;
-
-  // Calculate offline minutes today
   const sessionMinutes = present.completedSessions
     .filter(s => s.status === 'completed')
     .reduce((sum, s) => sum + s.durationMinutes, 0);
@@ -166,7 +173,7 @@ export const Popup: React.FC = () => {
 
   return (
     <div
-      className={`w-full max-w-[420px] min-w-[340px] max-h-[640px] overflow-y-auto p-4 space-y-3.5 select-none font-sans transition-colors duration-300 ${
+      className={`w-[380px] max-w-full p-4 space-y-3 font-sans transition-colors duration-300 ${
         isDarkMode
           ? 'bg-[#0B0F19] text-slate-100'
           : 'bg-[#F8FAFC] text-slate-900'
@@ -194,13 +201,33 @@ export const Popup: React.FC = () => {
           </div>
         </div>
 
-        <div className="flex items-center gap-2">
+        <div className="flex items-center gap-1.5">
+          {/* Universal Theme Mode Toggle */}
+          <button
+            onClick={handleToggleTheme}
+            title={`Current Theme: ${themePref.toUpperCase()} (Click to change mode across all pages)`}
+            className={`p-1.5 rounded-lg border shadow-subtle transition-all cursor-pointer flex items-center gap-1 ${
+              isDarkMode
+                ? 'text-amber-300 bg-[#131B2A] border-[#1F293D] hover:bg-[#1C273C]'
+                : 'text-indigo-600 bg-white border-slate-200 hover:bg-slate-100'
+            }`}
+          >
+            {themePref === 'dark' ? (
+              <Moon className="w-3.5 h-3.5 fill-current" />
+            ) : themePref === 'light' ? (
+              <Sun className="w-3.5 h-3.5 fill-current" />
+            ) : (
+              <Monitor className="w-3.5 h-3.5" />
+            )}
+          </button>
+
           <HistoryControls
             history={data.history}
             onUndo={handleUndo}
             onRedo={handleRedo}
             compact={true}
           />
+
           <button
             onClick={handleOpenDashboard}
             title="Open Full Dashboard in Tab"
@@ -247,11 +274,10 @@ export const Popup: React.FC = () => {
         </div>
       </div>
 
-      {/* Detox Timer Card (Supports Dark Theme + Manual ON/OFF Switch + Hours/Mins/Secs) */}
+      {/* Detox Timer Card */}
       <DetoxTimerCard
         session={present.activeSession}
         onStart={handleStartSession}
-        onToggleShield={handleToggleShield}
         onPause={handlePauseSession}
         onResume={handleResumeSession}
         onComplete={handleCompleteSession}
@@ -260,7 +286,7 @@ export const Popup: React.FC = () => {
         isDark={isDarkMode}
       />
 
-      {/* Weather & Offline Activity Suggestion */}
+      {/* Weather & Offline Activity Suggestion with + Plan */}
       <WeatherActivityCard
         weather={data.weather}
         onRefreshWeather={handleRefreshWeather}

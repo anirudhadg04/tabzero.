@@ -1,12 +1,11 @@
 import React, { useState, useEffect } from 'react';
-import { Play, Pause, CheckCircle2, XCircle, Sparkles, Shield, ShieldCheck, Power } from 'lucide-react';
+import { Play, Pause, CheckCircle2, XCircle, Sparkles, Shield, Clock } from 'lucide-react';
 import { DetoxSession } from '../types';
 import { calculateRemainingSeconds, formatTimeRemaining } from '../services/session';
 
 interface DetoxTimerCardProps {
   session: DetoxSession | null;
   onStart: (totalSeconds: number) => void;
-  onToggleShield?: (enabled: boolean) => void;
   onPause: () => void;
   onResume: () => void;
   onComplete: () => void;
@@ -26,7 +25,6 @@ const PRESET_OPTIONS = [
 export const DetoxTimerCard: React.FC<DetoxTimerCardProps> = ({
   session,
   onStart,
-  onToggleShield,
   onPause,
   onResume,
   onComplete,
@@ -37,7 +35,6 @@ export const DetoxTimerCard: React.FC<DetoxTimerCardProps> = ({
   const [hours, setHours] = useState<number>(0);
   const [minutes, setMinutes] = useState<number>(30);
   const [seconds, setSeconds] = useState<number>(0);
-  const [mode, setMode] = useState<'timed' | 'manual'>('timed');
   const [timeValue, setTimeValue] = useState<number>(() => calculateRemainingSeconds(session));
 
   useEffect(() => {
@@ -47,7 +44,7 @@ export const DetoxTimerCard: React.FC<DetoxTimerCardProps> = ({
     const interval = setInterval(() => {
       const current = calculateRemainingSeconds(session);
       setTimeValue(current);
-      if (!session.isIndefinite && current <= 0) {
+      if (current <= 0) {
         onComplete();
       }
     }, 1000);
@@ -57,26 +54,19 @@ export const DetoxTimerCard: React.FC<DetoxTimerCardProps> = ({
 
   const isActive = session?.status === 'active';
   const isPaused = session?.status === 'paused';
-  const isIndefinite = !!session?.isIndefinite;
 
-  const totalSessionSeconds = session?.durationSeconds || (session?.durationMinutes ? session.durationMinutes * 60 : (hours * 3600 + minutes * 60 + seconds));
-  
-  const progressPercent = (!isIndefinite && totalSessionSeconds > 0)
-    ? Math.min(100, Math.max(0, Math.round(((totalSessionSeconds - timeValue) / totalSessionSeconds) * 100)))
-    : 100;
+  const totalSessionSeconds =
+    session?.durationSeconds ||
+    (session?.durationMinutes ? session.durationMinutes * 60 : hours * 3600 + minutes * 60 + seconds);
+
+  const progressPercent =
+    totalSessionSeconds > 0
+      ? Math.min(100, Math.max(0, Math.round(((totalSessionSeconds - timeValue) / totalSessionSeconds) * 100)))
+      : 100;
 
   const handleStartTimed = () => {
     const totalSecs = Math.max(1, hours * 3600 + minutes * 60 + seconds);
     onStart(totalSecs);
-  };
-
-  const handleManualToggle = () => {
-    if (onToggleShield) {
-      onToggleShield(!isActive);
-    } else {
-      if (isActive) onCancel();
-      else onStart(0);
-    }
   };
 
   const applyPreset = (h: number, m: number, s: number) => {
@@ -97,7 +87,7 @@ export const DetoxTimerCard: React.FC<DetoxTimerCardProps> = ({
             : 'bg-white border-slate-200/80 text-slate-900 shadow-subtle'
         }`}
       >
-        {/* Top Header Row with Status & Quick Mode Switch */}
+        {/* Header Status */}
         <div className="flex items-center justify-between mb-3">
           <div className="flex items-center gap-2">
             <span
@@ -114,32 +104,15 @@ export const DetoxTimerCard: React.FC<DetoxTimerCardProps> = ({
                 isDark ? 'text-slate-300' : 'text-slate-600'
               }`}
             >
-              {isActive
-                ? isIndefinite
-                  ? 'Shield Active (No Limit)'
-                  : 'Detox Active'
-                : isPaused
-                ? 'Detox Paused'
-                : 'Set Disconnect Mode'}
+              {isActive ? 'Detox Active' : isPaused ? 'Detox Paused' : 'Set Disconnect Time'}
             </span>
           </div>
 
-          {/* Quick Manual ON / OFF Switch */}
-          <button
-            type="button"
-            onClick={handleManualToggle}
-            className={`flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[11px] font-medium transition-all cursor-pointer ${
-              isActive
-                ? 'bg-emerald-500 text-white shadow-[0_0_12px_rgba(16,185,129,0.35)]'
-                : isDark
-                ? 'bg-slate-800 text-slate-400 hover:text-slate-200 border border-slate-700'
-                : 'bg-slate-100 text-slate-500 hover:text-slate-900 border border-slate-200'
-            }`}
-            title={isActive ? 'Click to Turn Shield OFF' : 'Click to Turn Shield ON (Continuous)'}
-          >
-            <Power className="w-3 h-3" />
-            <span>{isActive ? 'ON' : 'OFF'}</span>
-          </button>
+          {session && (
+            <span className={`text-[11px] font-medium ${isDark ? 'text-slate-400' : 'text-slate-400'}`}>
+              {progressPercent}% elapsed
+            </span>
+          )}
         </div>
 
         {session ? (
@@ -152,51 +125,44 @@ export const DetoxTimerCard: React.FC<DetoxTimerCardProps> = ({
               >
                 {formatTimeRemaining(timeValue)}
               </span>
-              <span className={`text-xs font-medium ${isDark ? 'text-slate-400' : 'text-slate-400'}`}>
-                {isIndefinite ? 'elapsed' : `${progressPercent}% elapsed`}
-              </span>
             </div>
 
-            {!isIndefinite && (
+            <div
+              className={`w-full rounded-full h-1.5 mb-4 overflow-hidden ${
+                isDark ? 'bg-slate-800' : 'bg-slate-100'
+              }`}
+            >
               <div
-                className={`w-full rounded-full h-1.5 mb-4 overflow-hidden ${
-                  isDark ? 'bg-slate-800' : 'bg-slate-100'
-                }`}
-              >
-                <div
-                  className="bg-indigo-400 h-1.5 rounded-full transition-all duration-1000"
-                  style={{ width: `${progressPercent}%` }}
-                />
-              </div>
-            )}
+                className="bg-indigo-400 h-1.5 rounded-full transition-all duration-1000"
+                style={{ width: `${progressPercent}%` }}
+              />
+            </div>
 
             <div className="flex items-center gap-2 mt-2">
-              {!isIndefinite && (
-                isActive ? (
-                  <button
-                    onClick={onPause}
-                    className={`flex-1 flex items-center justify-center gap-1.5 py-2 px-3 text-xs font-medium rounded-xl transition-all ${
-                      isDark
-                        ? 'bg-slate-800 hover:bg-slate-700 text-slate-200'
-                        : 'bg-slate-100 hover:bg-slate-200 text-slate-700'
-                    }`}
-                  >
-                    <Pause className="w-3.5 h-3.5" /> Pause
-                  </button>
-                ) : (
-                  <button
-                    onClick={onResume}
-                    className="flex-1 flex items-center justify-center gap-1.5 py-2 px-3 bg-indigo-500 hover:bg-indigo-600 text-white text-xs font-medium rounded-xl transition-all shadow-sm"
-                  >
-                    <Play className="w-3.5 h-3.5 fill-current" /> Resume
-                  </button>
-                )
+              {isActive ? (
+                <button
+                  onClick={onPause}
+                  className={`flex-1 flex items-center justify-center gap-1.5 py-2 px-3 text-xs font-medium rounded-xl transition-all cursor-pointer ${
+                    isDark
+                      ? 'bg-slate-800 hover:bg-slate-700 text-slate-200'
+                      : 'bg-slate-100 hover:bg-slate-200 text-slate-700'
+                  }`}
+                >
+                  <Pause className="w-3.5 h-3.5" /> Pause
+                </button>
+              ) : (
+                <button
+                  onClick={onResume}
+                  className="flex-1 flex items-center justify-center gap-1.5 py-2 px-3 bg-indigo-500 hover:bg-indigo-600 text-white text-xs font-medium rounded-xl transition-all shadow-sm cursor-pointer"
+                >
+                  <Play className="w-3.5 h-3.5 fill-current" /> Resume
+                </button>
               )}
 
               <button
                 onClick={onComplete}
-                title="Finish Session"
-                className={`p-2 rounded-xl transition-all ${
+                title="Finish Session (Restore Access)"
+                className={`p-2 rounded-xl transition-all cursor-pointer ${
                   isDark
                     ? 'bg-emerald-950/60 hover:bg-emerald-900/80 text-emerald-300 border border-emerald-800/60'
                     : 'bg-emerald-50 hover:bg-emerald-100 text-emerald-600'
@@ -207,8 +173,8 @@ export const DetoxTimerCard: React.FC<DetoxTimerCardProps> = ({
 
               <button
                 onClick={onCancel}
-                title="Turn Off / Stop Shield"
-                className={`p-2 rounded-xl transition-all ${
+                title="Stop Session (Restore Access)"
+                className={`p-2 rounded-xl transition-all cursor-pointer ${
                   isDark
                     ? 'bg-rose-950/60 hover:bg-rose-900/80 text-rose-300 border border-rose-800/60'
                     : 'bg-rose-50 hover:bg-rose-100 text-rose-500'
@@ -220,152 +186,89 @@ export const DetoxTimerCard: React.FC<DetoxTimerCardProps> = ({
           </div>
         ) : (
           <div>
-            {/* Mode Tabs: Timed vs Manual Continuous */}
+            {/* Hours / Minutes / Seconds Selector */}
             <div
-              className={`flex rounded-xl p-1 mb-3 text-xs font-medium border ${
-                isDark
-                  ? 'bg-slate-900/90 border-slate-800 text-slate-400'
-                  : 'bg-slate-50 border-slate-100 text-slate-500'
+              className={`flex items-center justify-center gap-2 mb-3 p-2.5 rounded-xl border ${
+                isDark ? 'bg-slate-900/60 border-slate-800' : 'bg-slate-50 border-slate-100'
               }`}
             >
-              <button
-                type="button"
-                onClick={() => setMode('timed')}
-                className={`flex-1 py-1 rounded-lg text-center transition-all ${
-                  mode === 'timed'
-                    ? isDark
-                      ? 'bg-slate-800 text-white shadow-sm'
-                      : 'bg-white text-slate-900 shadow-sm'
-                    : 'hover:text-slate-700'
-                }`}
-              >
-                Timer Limit
-              </button>
-
-              <button
-                type="button"
-                onClick={() => setMode('manual')}
-                className={`flex-1 py-1 rounded-lg text-center transition-all ${
-                  mode === 'manual'
-                    ? isDark
-                      ? 'bg-slate-800 text-white shadow-sm'
-                      : 'bg-white text-slate-900 shadow-sm'
-                    : 'hover:text-slate-700'
-                }`}
-              >
-                Continuous (On/Off)
-              </button>
+              <div className="flex flex-col items-center">
+                <input
+                  type="number"
+                  min="0"
+                  max="24"
+                  value={hours}
+                  onChange={e => setHours(Math.max(0, parseInt(e.target.value) || 0))}
+                  className={`w-11 text-center font-mono font-medium text-sm rounded-lg py-1 outline-none border focus:border-indigo-400 ${
+                    isDark ? 'bg-slate-800 border-slate-700 text-white' : 'bg-white border-slate-200 text-slate-800'
+                  }`}
+                />
+                <span className="text-[10px] text-slate-400 uppercase font-semibold mt-0.5">Hours</span>
+              </div>
+              <span className="text-slate-400 font-mono font-bold text-sm">:</span>
+              <div className="flex flex-col items-center">
+                <input
+                  type="number"
+                  min="0"
+                  max="59"
+                  value={minutes}
+                  onChange={e => setMinutes(Math.max(0, Math.min(59, parseInt(e.target.value) || 0)))}
+                  className={`w-11 text-center font-mono font-medium text-sm rounded-lg py-1 outline-none border focus:border-indigo-400 ${
+                    isDark ? 'bg-slate-800 border-slate-700 text-white' : 'bg-white border-slate-200 text-slate-800'
+                  }`}
+                />
+                <span className="text-[10px] text-slate-400 uppercase font-semibold mt-0.5">Mins</span>
+              </div>
+              <span className="text-slate-400 font-mono font-bold text-sm">:</span>
+              <div className="flex flex-col items-center">
+                <input
+                  type="number"
+                  min="0"
+                  max="59"
+                  value={seconds}
+                  onChange={e => setSeconds(Math.max(0, Math.min(59, parseInt(e.target.value) || 0)))}
+                  className={`w-11 text-center font-mono font-medium text-sm rounded-lg py-1 outline-none border focus:border-indigo-400 ${
+                    isDark ? 'bg-slate-800 border-slate-700 text-white' : 'bg-white border-slate-200 text-slate-800'
+                  }`}
+                />
+                <span className="text-[10px] text-slate-400 uppercase font-semibold mt-0.5">Secs</span>
+              </div>
             </div>
 
-            {mode === 'timed' ? (
-              <>
-                {/* Hours / Minutes / Seconds Selector */}
-                <div
-                  className={`flex items-center justify-center gap-2 mb-3 p-2.5 rounded-xl border ${
-                    isDark
-                      ? 'bg-slate-900/60 border-slate-800'
-                      : 'bg-slate-50 border-slate-100'
+            {/* Quick Preset Pills */}
+            <div className="flex items-center justify-between gap-1 mb-3">
+              {PRESET_OPTIONS.map(p => (
+                <button
+                  key={p.label}
+                  type="button"
+                  onClick={() => applyPreset(p.h, p.m, p.s)}
+                  className={`flex-1 py-1 text-[11px] font-medium rounded-lg transition-all border cursor-pointer ${
+                    hours === p.h && minutes === p.m && seconds === p.s
+                      ? isDark
+                        ? 'bg-slate-100 text-slate-900 border-white'
+                        : 'bg-slate-900 text-white border-slate-900'
+                      : isDark
+                      ? 'bg-slate-800 hover:bg-slate-700 text-slate-300 border-slate-700'
+                      : 'bg-slate-50 hover:bg-slate-100 text-slate-600 border-slate-200/60'
                   }`}
                 >
-                  <div className="flex flex-col items-center">
-                    <input
-                      type="number"
-                      min="0"
-                      max="24"
-                      value={hours}
-                      onChange={e => setHours(Math.max(0, parseInt(e.target.value) || 0))}
-                      className={`w-11 text-center font-mono font-medium text-sm rounded-lg py-1 outline-none border focus:border-indigo-400 ${
-                        isDark
-                          ? 'bg-slate-800 border-slate-700 text-white'
-                          : 'bg-white border-slate-200 text-slate-800'
-                      }`}
-                    />
-                    <span className="text-[10px] text-slate-400 uppercase font-semibold mt-0.5">Hours</span>
-                  </div>
-                  <span className="text-slate-400 font-mono font-bold text-sm">:</span>
-                  <div className="flex flex-col items-center">
-                    <input
-                      type="number"
-                      min="0"
-                      max="59"
-                      value={minutes}
-                      onChange={e => setMinutes(Math.max(0, Math.min(59, parseInt(e.target.value) || 0)))}
-                      className={`w-11 text-center font-mono font-medium text-sm rounded-lg py-1 outline-none border focus:border-indigo-400 ${
-                        isDark
-                          ? 'bg-slate-800 border-slate-700 text-white'
-                          : 'bg-white border-slate-200 text-slate-800'
-                      }`}
-                    />
-                    <span className="text-[10px] text-slate-400 uppercase font-semibold mt-0.5">Mins</span>
-                  </div>
-                  <span className="text-slate-400 font-mono font-bold text-sm">:</span>
-                  <div className="flex flex-col items-center">
-                    <input
-                      type="number"
-                      min="0"
-                      max="59"
-                      value={seconds}
-                      onChange={e => setSeconds(Math.max(0, Math.min(59, parseInt(e.target.value) || 0)))}
-                      className={`w-11 text-center font-mono font-medium text-sm rounded-lg py-1 outline-none border focus:border-indigo-400 ${
-                        isDark
-                          ? 'bg-slate-800 border-slate-700 text-white'
-                          : 'bg-white border-slate-200 text-slate-800'
-                      }`}
-                    />
-                    <span className="text-[10px] text-slate-400 uppercase font-semibold mt-0.5">Secs</span>
-                  </div>
-                </div>
-
-                {/* Quick Preset Pills */}
-                <div className="flex items-center justify-between gap-1 mb-3">
-                  {PRESET_OPTIONS.map(p => (
-                    <button
-                      key={p.label}
-                      type="button"
-                      onClick={() => applyPreset(p.h, p.m, p.s)}
-                      className={`flex-1 py-1 text-[11px] font-medium rounded-lg transition-all border ${
-                        hours === p.h && minutes === p.m && seconds === p.s
-                          ? isDark
-                            ? 'bg-slate-100 text-slate-900 border-white'
-                            : 'bg-slate-900 text-white border-slate-900'
-                          : isDark
-                          ? 'bg-slate-800 hover:bg-slate-700 text-slate-300 border-slate-700'
-                          : 'bg-slate-50 hover:bg-slate-100 text-slate-600 border-slate-200/60'
-                      }`}
-                    >
-                      {p.label}
-                    </button>
-                  ))}
-                </div>
-
-                <button
-                  onClick={handleStartTimed}
-                  disabled={selectedTotalSeconds <= 0}
-                  className={`w-full flex items-center justify-center gap-2 py-2.5 text-xs font-medium rounded-xl transition-all shadow-subtle active:scale-[0.99] cursor-pointer ${
-                    isDark
-                      ? 'bg-white hover:bg-slate-100 text-slate-900'
-                      : 'bg-slate-900 hover:bg-slate-800 text-white'
-                  }`}
-                >
-                  <Sparkles className="w-3.5 h-3.5 text-indigo-400" />
-                  Start Detox ({formatTimeRemaining(selectedTotalSeconds)})
+                  {p.label}
                 </button>
-              </>
-            ) : (
-              <div className="space-y-3 py-1">
-                <p className={`text-xs leading-relaxed ${isDark ? 'text-slate-400' : 'text-slate-500'}`}>
-                  No time limit. Turn the shield <strong>ON</strong> to block distractions immediately, and flip it <strong>OFF</strong> whenever you are done.
-                </p>
+              ))}
+            </div>
 
-                <button
-                  onClick={() => onToggleShield && onToggleShield(true)}
-                  className="w-full flex items-center justify-center gap-2 py-3 bg-emerald-500 hover:bg-emerald-600 text-white text-xs font-semibold rounded-xl transition-all shadow-md active:scale-95 cursor-pointer"
-                >
-                  <ShieldCheck className="w-4 h-4" />
-                  Turn Shield ON (Manual Mode)
-                </button>
-              </div>
-            )}
+            <button
+              onClick={handleStartTimed}
+              disabled={selectedTotalSeconds <= 0}
+              className={`w-full flex items-center justify-center gap-2 py-2.5 text-xs font-medium rounded-xl transition-all shadow-subtle active:scale-[0.99] cursor-pointer ${
+                isDark
+                  ? 'bg-white hover:bg-slate-100 text-slate-900'
+                  : 'bg-slate-900 hover:bg-slate-800 text-white'
+              }`}
+            >
+              <Sparkles className="w-3.5 h-3.5 text-indigo-400" />
+              Start Detox ({formatTimeRemaining(selectedTotalSeconds)})
+            </button>
           </div>
         )}
       </div>
@@ -374,194 +277,162 @@ export const DetoxTimerCard: React.FC<DetoxTimerCardProps> = ({
 
   // Full Dashboard Display
   return (
-    <div className="bg-white rounded-2xl p-6 sm:p-8 border border-slate-200/80 shadow-subtle relative overflow-hidden">
-      <div className="absolute top-0 right-0 w-64 h-64 bg-indigo-50/50 rounded-full blur-3xl -z-10 pointer-events-none" />
-
+    <div
+      className={`rounded-2xl p-6 sm:p-8 border relative overflow-hidden transition-colors ${
+        isDark
+          ? 'bg-[#131B2A] border-[#1F293D] text-slate-100 shadow-[0_4px_20px_rgba(0,0,0,0.25)]'
+          : 'bg-white border-slate-200/80 text-slate-900 shadow-subtle'
+      }`}
+    >
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-6">
         <div>
           <div className="flex items-center gap-2.5 mb-2">
             <span
-              className={`w-2.5 h-2.5 rounded-full ${
+              className={`w-3 h-3 rounded-full ${
                 isActive
-                  ? 'bg-emerald-500 animate-pulse'
+                  ? 'bg-emerald-500 animate-pulse shadow-[0_0_10px_rgba(16,185,129,0.7)]'
                   : isPaused
                   ? 'bg-amber-400'
                   : 'bg-slate-300'
               }`}
             />
-            <span className="text-xs font-semibold uppercase tracking-wider text-slate-400">
-              {isActive
-                ? isIndefinite
-                  ? 'Shield Active (No Time Limit)'
-                  : 'Session in Progress'
-                : isPaused
-                ? 'Detox Paused'
-                : 'Custom Detox Focus'}
-            </span>
+            <h2 className={`text-lg font-semibold tracking-tight ${isDark ? 'text-white' : 'text-slate-900'}`}>
+              {isActive ? 'Digital Detox in Progress' : isPaused ? 'Detox Paused' : 'Begin Digital Detox'}
+            </h2>
           </div>
-          <h2 className="text-2xl font-light text-slate-900 tracking-tight">
+          <p className="text-xs text-slate-400 max-w-md">
             {isActive
-              ? 'Distraction Shield Active'
-              : isPaused
-              ? 'Focus on Pause'
-              : 'Choose Your Screen-Free Duration'}
-          </h2>
-          <p className="text-sm text-slate-500 mt-1 max-w-md">
-            {isActive
-              ? 'Restricted websites and their subdomains are currently blocked.'
-              : 'Choose an exact time limit or use the manual ON / OFF switch for continuous protection.'}
+              ? 'Distracting websites are locked down. Step away from your screen and embrace the real world.'
+              : 'Choose your desired disconnect window to shield distracting sites and reclaim presence.'}
           </p>
         </div>
 
-        {/* Big Live Countdown / Chosen Timer */}
-        <div className="flex flex-col items-center md:items-end">
-          <div className="font-mono text-5xl sm:text-6xl font-light tracking-tight text-slate-900">
-            {session
-              ? formatTimeRemaining(timeValue)
-              : formatTimeRemaining(selectedTotalSeconds)}
-          </div>
-          <span className="text-xs text-slate-400 mt-1 font-medium">
-            {session
-              ? isIndefinite
-                ? 'Continuous Manual Session'
-                : `${progressPercent}% complete`
-              : 'Selected Disconnect Time'}
-          </span>
-        </div>
-      </div>
-
-      {session && !isIndefinite && (
-        <div className="mt-6">
-          <div className="w-full bg-slate-100 rounded-full h-2 overflow-hidden">
-            <div
-              className="bg-indigo-400 h-2 rounded-full transition-all duration-1000"
-              style={{ width: `${progressPercent}%` }}
-            />
-          </div>
-        </div>
-      )}
-
-      {/* Inputs & Actions */}
-      <div className="mt-8 pt-6 border-t border-slate-100 flex flex-wrap items-center justify-between gap-5">
-        {!session ? (
-          <>
-            <div className="flex flex-wrap items-center gap-3">
-              <span className="text-xs font-medium text-slate-400 mr-1">Duration:</span>
-              
-              <div className="flex items-center gap-2 bg-slate-50 px-3.5 py-2 rounded-xl border border-slate-200/80">
-                <div className="flex items-center gap-1">
-                  <input
-                    type="number"
-                    min="0"
-                    max="24"
-                    value={hours}
-                    onChange={e => setHours(Math.max(0, parseInt(e.target.value) || 0))}
-                    className="w-12 text-center font-mono font-semibold text-sm bg-white border border-slate-200 rounded-lg py-1 outline-none focus:border-indigo-400 text-slate-800"
-                  />
-                  <span className="text-xs text-slate-500 font-medium">hr</span>
-                </div>
-
-                <span className="text-slate-400 font-bold">:</span>
-
-                <div className="flex items-center gap-1">
-                  <input
-                    type="number"
-                    min="0"
-                    max="59"
-                    value={minutes}
-                    onChange={e => setMinutes(Math.max(0, Math.min(59, parseInt(e.target.value) || 0)))}
-                    className="w-12 text-center font-mono font-semibold text-sm bg-white border border-slate-200 rounded-lg py-1 outline-none focus:border-indigo-400 text-slate-800"
-                  />
-                  <span className="text-xs text-slate-500 font-medium">min</span>
-                </div>
-
-                <span className="text-slate-400 font-bold">:</span>
-
-                <div className="flex items-center gap-1">
-                  <input
-                    type="number"
-                    min="0"
-                    max="59"
-                    value={seconds}
-                    onChange={e => setSeconds(Math.max(0, Math.min(59, parseInt(e.target.value) || 0)))}
-                    className="w-12 text-center font-mono font-semibold text-sm bg-white border border-slate-200 rounded-lg py-1 outline-none focus:border-indigo-400 text-slate-800"
-                  />
-                  <span className="text-xs text-slate-500 font-medium">sec</span>
-                </div>
-              </div>
-
-              <div className="hidden sm:flex items-center gap-1.5 pl-2 border-l border-slate-200">
-                {PRESET_OPTIONS.map(p => (
-                  <button
-                    key={p.label}
-                    type="button"
-                    onClick={() => applyPreset(p.h, p.m, p.s)}
-                    className={`px-2.5 py-1.5 text-xs font-medium rounded-lg transition-all ${
-                      hours === p.h && minutes === p.m && seconds === p.s
-                        ? 'bg-slate-900 text-white shadow-sm'
-                        : 'bg-white hover:bg-slate-100 text-slate-600 border border-slate-200/70'
-                    }`}
-                  >
-                    {p.label}
-                  </button>
-                ))}
-              </div>
+        {session ? (
+          <div className="flex flex-col items-end gap-3">
+            <div className="text-right">
+              <span className={`text-4xl sm:text-5xl font-light font-mono tracking-tight ${
+                isDark ? 'text-white' : 'text-slate-900'
+              }`}>
+                {formatTimeRemaining(timeValue)}
+              </span>
+              <p className="text-xs text-slate-400 mt-1">{progressPercent}% session elapsed</p>
             </div>
 
-            <div className="flex items-center gap-2.5">
-              <button
-                onClick={handleStartTimed}
-                disabled={selectedTotalSeconds <= 0}
-                className="flex items-center gap-2 px-5 py-2.5 bg-slate-900 hover:bg-slate-800 disabled:bg-slate-300 disabled:cursor-not-allowed text-white text-xs font-medium rounded-xl transition-all shadow-subtle active:scale-95 cursor-pointer"
-              >
-                <Sparkles className="w-4 h-4 text-indigo-300" />
-                Start Detox ({formatTimeRemaining(selectedTotalSeconds)})
-              </button>
-
-              <button
-                onClick={() => onToggleShield && onToggleShield(true)}
-                className="flex items-center gap-2 px-4 py-2.5 bg-emerald-50 hover:bg-emerald-100 text-emerald-800 border border-emerald-200/70 text-xs font-medium rounded-xl transition-all shadow-subtle active:scale-95 cursor-pointer"
-                title="Continuous protection without time limit"
-              >
-                <Shield className="w-4 h-4 text-emerald-600" />
-                Manual Shield ON
-              </button>
-            </div>
-          </>
-        ) : (
-          <div className="w-full flex flex-wrap items-center justify-between gap-4">
             <div className="flex items-center gap-2">
-              {!isIndefinite && (
-                isActive ? (
-                  <button
-                    onClick={onPause}
-                    className="flex items-center gap-2 px-4 py-2 bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs font-medium rounded-xl transition-all cursor-pointer"
-                  >
-                    <Pause className="w-3.5 h-3.5" /> Pause Session
-                  </button>
-                ) : (
-                  <button
-                    onClick={onResume}
-                    className="flex items-center gap-2 px-4 py-2 bg-indigo-500 hover:bg-indigo-600 text-white text-xs font-medium rounded-xl transition-all cursor-pointer shadow-sm"
-                  >
-                    <Play className="w-3.5 h-3.5 fill-current" /> Resume Session
-                  </button>
-                )
+              {isActive ? (
+                <button
+                  onClick={onPause}
+                  className={`flex items-center gap-1.5 px-4 py-2 text-xs font-medium rounded-xl transition-all cursor-pointer ${
+                    isDark ? 'bg-slate-800 hover:bg-slate-700 text-white' : 'bg-slate-100 hover:bg-slate-200 text-slate-700'
+                  }`}
+                >
+                  <Pause className="w-3.5 h-3.5" /> Pause
+                </button>
+              ) : (
+                <button
+                  onClick={onResume}
+                  className="flex items-center gap-1.5 px-4 py-2 bg-indigo-500 hover:bg-indigo-600 text-white text-xs font-medium rounded-xl transition-all shadow-sm cursor-pointer"
+                >
+                  <Play className="w-3.5 h-3.5 fill-current" /> Resume
+                </button>
               )}
 
               <button
                 onClick={onComplete}
-                className="flex items-center gap-2 px-4 py-2 bg-emerald-50 hover:bg-emerald-100 text-emerald-700 text-xs font-medium rounded-xl transition-all cursor-pointer border border-emerald-200/60"
+                className="flex items-center gap-1.5 px-4 py-2 bg-emerald-50 hover:bg-emerald-100 text-emerald-700 text-xs font-medium rounded-xl transition-all cursor-pointer"
               >
-                <CheckCircle2 className="w-3.5 h-3.5" /> Mark Completed
+                <CheckCircle2 className="w-3.5 h-3.5" /> Complete
               </button>
+
+              <button
+                onClick={onCancel}
+                className="flex items-center gap-1.5 px-3 py-2 bg-rose-50 hover:bg-rose-100 text-rose-600 text-xs font-medium rounded-xl transition-all cursor-pointer"
+              >
+                <XCircle className="w-3.5 h-3.5" /> Stop
+              </button>
+            </div>
+          </div>
+        ) : (
+          <div className="flex flex-col sm:flex-row items-center gap-3">
+            {/* Hours / Minutes / Seconds input */}
+            <div className={`flex items-center gap-2 p-2 rounded-xl border ${
+              isDark ? 'bg-slate-900/60 border-slate-800' : 'bg-slate-50 border-slate-200/80'
+            }`}>
+              <div className="flex flex-col items-center">
+                <input
+                  type="number"
+                  min="0"
+                  max="24"
+                  value={hours}
+                  onChange={e => setHours(Math.max(0, parseInt(e.target.value) || 0))}
+                  className={`w-12 text-center font-mono font-medium text-sm rounded-lg py-1 border ${
+                    isDark ? 'bg-slate-800 border-slate-700 text-white' : 'bg-white border-slate-300 text-slate-800'
+                  }`}
+                />
+                <span className="text-[10px] text-slate-400 uppercase mt-0.5">Hours</span>
+              </div>
+              <span className="text-slate-400 font-bold">:</span>
+              <div className="flex flex-col items-center">
+                <input
+                  type="number"
+                  min="0"
+                  max="59"
+                  value={minutes}
+                  onChange={e => setMinutes(Math.max(0, Math.min(59, parseInt(e.target.value) || 0)))}
+                  className={`w-12 text-center font-mono font-medium text-sm rounded-lg py-1 border ${
+                    isDark ? 'bg-slate-800 border-slate-700 text-white' : 'bg-white border-slate-300 text-slate-800'
+                  }`}
+                />
+                <span className="text-[10px] text-slate-400 uppercase mt-0.5">Mins</span>
+              </div>
+              <span className="text-slate-400 font-bold">:</span>
+              <div className="flex flex-col items-center">
+                <input
+                  type="number"
+                  min="0"
+                  max="59"
+                  value={seconds}
+                  onChange={e => setSeconds(Math.max(0, Math.min(59, parseInt(e.target.value) || 0)))}
+                  className={`w-12 text-center font-mono font-medium text-sm rounded-lg py-1 border ${
+                    isDark ? 'bg-slate-800 border-slate-700 text-white' : 'bg-white border-slate-300 text-slate-800'
+                  }`}
+                />
+                <span className="text-[10px] text-slate-400 uppercase mt-0.5">Secs</span>
+              </div>
+            </div>
+
+            <div className="flex items-center gap-1.5">
+              {PRESET_OPTIONS.map(p => (
+                <button
+                  key={p.label}
+                  type="button"
+                  onClick={() => applyPreset(p.h, p.m, p.s)}
+                  className={`px-3 py-2 text-xs font-medium rounded-xl transition-all border cursor-pointer ${
+                    hours === p.h && minutes === p.m && seconds === p.s
+                      ? isDark
+                        ? 'bg-white text-slate-900 border-white'
+                        : 'bg-slate-900 text-white border-slate-900'
+                      : isDark
+                      ? 'bg-slate-800 hover:bg-slate-700 text-slate-300 border-slate-700'
+                      : 'bg-slate-50 hover:bg-slate-100 text-slate-600 border-slate-200/80'
+                  }`}
+                >
+                  {p.label}
+                </button>
+              ))}
             </div>
 
             <button
-              onClick={onCancel}
-              className="flex items-center gap-1.5 text-xs text-rose-500 hover:text-rose-600 font-medium px-3 py-1.5 rounded-lg hover:bg-rose-50 transition-all cursor-pointer"
+              onClick={handleStartTimed}
+              disabled={selectedTotalSeconds <= 0}
+              className={`flex items-center gap-2 px-5 py-3 text-xs font-semibold rounded-xl transition-all shadow-subtle cursor-pointer ${
+                isDark
+                  ? 'bg-white hover:bg-slate-100 text-slate-950'
+                  : 'bg-slate-900 hover:bg-slate-800 text-white'
+              }`}
             >
-              <XCircle className="w-3.5 h-3.5" /> Turn Shield OFF
+              <Sparkles className="w-4 h-4 text-indigo-400" />
+              <span>Start ({formatTimeRemaining(selectedTotalSeconds)})</span>
             </button>
           </div>
         )}

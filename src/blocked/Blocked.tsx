@@ -162,12 +162,15 @@ export const BlockedIntervention: React.FC = () => {
   const [session, setSession] = useState<DetoxSession | null>(null);
   const [weather, setWeather] = useState<WeatherData | null>(null);
   const [remainingSeconds, setRemainingSeconds] = useState<number>(0);
-  const [isDarkMode, setIsDarkMode] = useState<boolean>(() => {
+  const [themePref, setThemePref] = useState<'system' | 'light' | 'dark'>('system');
+  const [systemIsDark, setSystemIsDark] = useState<boolean>(() => {
     if (typeof window !== 'undefined' && window.matchMedia) {
       return window.matchMedia('(prefers-color-scheme: dark)').matches;
     }
     return false;
   });
+
+  const isDarkMode = themePref === 'dark' ? true : themePref === 'light' ? false : systemIsDark;
 
   const [attemptedDomain, setAttemptedDomain] = useState<string>(() => {
     try {
@@ -182,20 +185,38 @@ export const BlockedIntervention: React.FC = () => {
   useEffect(() => {
     if (typeof window !== 'undefined' && window.matchMedia) {
       const mediaQuery = window.matchMedia('(prefers-color-scheme: dark)');
-      const listener = (e: MediaQueryListEvent) => setIsDarkMode(e.matches);
+      const listener = (e: MediaQueryListEvent) => setSystemIsDark(e.matches);
       mediaQuery.addEventListener('change', listener);
       return () => mediaQuery.removeEventListener('change', listener);
     }
   }, []);
+
+  const redirectToOriginalSite = (fallbackDomain?: string) => {
+    const domain =
+      attemptedDomain ||
+      fallbackDomain ||
+      (session?.selectedDomains && session.selectedDomains[0]) ||
+      'instagram.com';
+    const clean = domain.replace(/^[a-zA-Z]+:\/\//, '').split('/')[0];
+    console.log('[tabzero] Restoring navigation to https://' + clean);
+    window.location.replace(`https://${clean}`);
+  };
 
   // Sync storage & session state
   useEffect(() => {
     getStorageData().then(data => {
       setSession(data.history.present.activeSession);
       setWeather(data.weather);
+      if (data.themePreference) setThemePref(data.themePreference);
       setRemainingSeconds(calculateRemainingSeconds(data.history.present.activeSession));
-      if (!attemptedDomain && data.history.present.restrictedSites.length > 0) {
-        setAttemptedDomain(data.history.present.restrictedSites[0].domain);
+
+      if (!attemptedDomain) {
+        const detected =
+          data.lastBlockedDomain ||
+          (data.history.present.restrictedSites.length > 0
+            ? data.history.present.restrictedSites[0].domain
+            : '');
+        if (detected) setAttemptedDomain(detected);
       }
     });
 
@@ -203,26 +224,21 @@ export const BlockedIntervention: React.FC = () => {
       const isStillActive = data.history.present.activeSession?.status === 'active';
       setSession(data.history.present.activeSession);
       setWeather(data.weather);
+      if (data.themePreference) setThemePref(data.themePreference);
       setRemainingSeconds(calculateRemainingSeconds(data.history.present.activeSession));
 
-      // If detox session was stopped, ended, or toggled off, automatically redirect back to the target site!
+      // If detox session was stopped or ended, immediately redirect back to target site!
       if (!isStillActive) {
-        const target = attemptedDomain || (data.history.present.restrictedSites[0]?.domain);
-        if (target) {
-          window.location.href = `https://${target}`;
-        } else if (window.history.length > 1) {
-          window.history.back();
-        }
+        redirectToOriginalSite(data.lastBlockedDomain || data.history.present.restrictedSites[0]?.domain);
       }
     });
 
     return () => unsubscribe();
   }, [attemptedDomain]);
 
-  // Timer tick effect with automatic refresh when timer runs out
+  // Timer tick effect with automatic redirect when timer runs out
   useEffect(() => {
     if (!session || session.status !== 'active') return;
-    if (session.isIndefinite) return;
 
     const interval = setInterval(() => {
       const remaining = calculateRemainingSeconds(session);
@@ -230,15 +246,8 @@ export const BlockedIntervention: React.FC = () => {
       if (remaining <= 0) {
         clearInterval(interval);
         sendExtensionMessage({ type: 'SESSION_COMPLETE' });
-        // Automatically refresh back into the website!
-        const target = attemptedDomain || (session.selectedDomains && session.selectedDomains[0]);
-        if (target) {
-          window.location.href = `https://${target}`;
-        } else if (window.history.length > 1) {
-          window.history.back();
-        } else {
-          window.location.reload();
-        }
+        // Automatically restore and redirect into the original website!
+        redirectToOriginalSite();
       }
     }, 1000);
 
@@ -253,9 +262,10 @@ export const BlockedIntervention: React.FC = () => {
     }
   };
 
-  const handleEndSession = async () => {
+  const handleAdmitDefeat = async () => {
     await sendExtensionMessage({ type: 'SESSION_CANCEL' });
-    window.location.href = 'dashboard.html';
+    // Redirect user directly to the website they were initially trying to visit!
+    redirectToOriginalSite();
   };
 
   const formattedWeather = formatWeather(weather);
@@ -443,8 +453,8 @@ export const BlockedIntervention: React.FC = () => {
           </button>
 
           <button
-            onClick={handleEndSession}
-            title="Surrender session early"
+            onClick={handleAdmitDefeat}
+            title="Surrender session early and return to website"
             className={`w-full sm:w-auto flex items-center justify-center gap-1.5 px-4 py-2.5 text-xs font-medium rounded-xl transition-all cursor-pointer backdrop-blur-md border ${
               isDarkMode
                 ? 'bg-black/35 hover:bg-rose-950/40 text-slate-300 hover:text-rose-300 border-white/15'
