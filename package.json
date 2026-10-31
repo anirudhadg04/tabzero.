@@ -1,0 +1,39 @@
+{
+  "name": "tabzero-browser-extension",
+  "version": "1.0.0",
+  "description": "tabzero. — Digital Detox Browser Extension",
+  "type": "module",
+  "scripts": {
+    "dev": "vite",
+    "build": "vite build && node scripts/copy-manifest.js",
+    "server": "node backend/server.js",
+    "test:history": "tsx scripts/test-undo-redo.ts",
+    "test:backend": "tsx scripts/test-backend.ts",
+    "test": "tsx scripts/test-undo-redo.ts && tsx scripts/test-backend.ts",
+    "preview": "vite preview"
+  },
+  "dependencies": {
+    "clsx": "^2.1.1",
+    "cors": "^2.8.5",
+    "express": "^4.21.2",
+    "lucide-react": "^1.16.0",
+    "react": "^19.0.0",
+    "react-dom": "^19.0.0",
+    "tailwind-merge": "^3.0.2"
+  },
+  "devDependencies": {
+    "@types/chrome": "^0.0.312",
+    "@types/cors": "^2.8.17",
+    "@types/express": "^5.0.0",
+    "@types/node": "^22.13.10",
+    "@types/react": "^19.0.10",
+    "@types/react-dom": "^19.0.4",
+    "@vitejs/plugin-react": "^4.3.4",
+    "autoprefixer": "^10.4.21",
+    "postcss": "^8.5.3",
+    "tailwindcss": "^3.4.17",
+    "tsx": "^4.23.15",
+    "typescript": "^5.8.2",
+    "vite": "^6.2.1"
+  }
+}
