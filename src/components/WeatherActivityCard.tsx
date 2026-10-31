@@ -9,6 +9,7 @@ interface WeatherActivityCardProps {
   onRefreshWeather: () => void;
   onAddActivity: (recommendation: ActivityRecommendation) => void;
   compact?: boolean;
+  isDark?: boolean;
 }
 
 export const WeatherActivityCard: React.FC<WeatherActivityCardProps> = ({
@@ -16,6 +17,7 @@ export const WeatherActivityCard: React.FC<WeatherActivityCardProps> = ({
   onRefreshWeather,
   onAddActivity,
   compact = false,
+  isDark = false,
 }) => {
   const [refreshing, setRefreshing] = useState(false);
   const [addedIds, setAddedIds] = useState<Record<string, boolean>>({});
@@ -46,38 +48,58 @@ export const WeatherActivityCard: React.FC<WeatherActivityCardProps> = ({
 
   if (compact) {
     return (
-      <div className="bg-white rounded-2xl p-4 border border-slate-200/80 shadow-subtle">
+      <div
+        className={`rounded-2xl p-4 border transition-colors duration-300 ${
+          isDark
+            ? 'bg-[#131B2A] border-[#1F293D] text-slate-100 shadow-[0_4px_20px_rgba(0,0,0,0.25)]'
+            : 'bg-white border-slate-200/80 text-slate-900 shadow-subtle'
+        }`}
+      >
         <div className="flex items-center justify-between mb-3">
           <div className="flex items-center gap-2">
             {getWeatherIcon()}
             <div>
-              <h4 className="text-xs font-semibold text-slate-800">
+              <h4 className={`text-xs font-semibold ${isDark ? 'text-white' : 'text-slate-800'}`}>
                 {weather ? `${weather.temperature}°C, ${weather.condition}` : 'Outdoor Forecast'}
               </h4>
-              <p className="text-[10px] text-slate-400">{weather?.city || 'Bangalore'}</p>
+              <p className={`text-[10px] ${isDark ? 'text-slate-400' : 'text-slate-400'}`}>
+                {weather?.city || 'Detecting Location...'}
+              </p>
             </div>
           </div>
           <button
             onClick={handleRefresh}
-            className="p-1.5 text-slate-400 hover:text-slate-600 rounded-lg transition-colors"
+            className={`p-1.5 rounded-lg transition-colors ${
+              isDark ? 'text-slate-400 hover:text-white' : 'text-slate-400 hover:text-slate-600'
+            }`}
           >
             <RefreshCw className={`w-3.5 h-3.5 ${refreshing ? 'animate-spin' : ''}`} />
           </button>
         </div>
 
         {recommendations[0] && (
-          <div className="bg-slate-50 p-2.5 rounded-xl border border-slate-100 flex items-center justify-between">
+          <div
+            className={`p-2.5 rounded-xl border flex items-center justify-between ${
+              isDark
+                ? 'bg-slate-900/60 border-slate-800'
+                : 'bg-slate-50 border-slate-100'
+            }`}
+          >
             <div className="min-w-0 pr-2">
-              <span className="text-[10px] font-semibold text-indigo-600 uppercase tracking-wide">
+              <span className="text-[10px] font-semibold text-indigo-400 uppercase tracking-wide">
                 Weather Suggestion
               </span>
-              <p className="text-xs font-medium text-slate-800 truncate">
+              <p className={`text-xs font-medium truncate ${isDark ? 'text-slate-200' : 'text-slate-800'}`}>
                 {recommendations[0].title}
               </p>
             </div>
             <button
               onClick={() => handleAdd(recommendations[0])}
-              className="px-2 py-1 bg-white hover:bg-slate-100 text-[11px] font-medium text-slate-700 rounded-lg border border-slate-200 transition-all shrink-0"
+              className={`px-2 py-1 text-[11px] font-medium rounded-lg border transition-all shrink-0 ${
+                isDark
+                  ? 'bg-slate-800 hover:bg-slate-700 text-slate-200 border-slate-700'
+                  : 'bg-white hover:bg-slate-100 text-slate-700 border-slate-200'
+              }`}
             >
               + Plan
             </button>

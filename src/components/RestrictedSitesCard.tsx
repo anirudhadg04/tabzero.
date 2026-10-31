@@ -9,6 +9,7 @@ interface RestrictedSitesCardProps {
   onRemoveSite: (id: string) => void;
   onToggleSite: (id: string) => void;
   compact?: boolean;
+  isDark?: boolean;
 }
 
 const COMMON_SUGGESTIONS = [
@@ -26,6 +27,7 @@ export const RestrictedSitesCard: React.FC<RestrictedSitesCardProps> = ({
   onRemoveSite,
   onToggleSite,
   compact = false,
+  isDark = false,
 }) => {
   const [newDomain, setNewDomain] = useState('');
   const [selectedCategory, setSelectedCategory] = useState<RestrictedSite['category']>('social');
@@ -43,11 +45,21 @@ export const RestrictedSitesCard: React.FC<RestrictedSitesCardProps> = ({
 
   if (compact) {
     return (
-      <div className="bg-white rounded-2xl p-4 border border-slate-200/80 shadow-subtle">
+      <div
+        className={`rounded-2xl p-4 border transition-colors duration-300 ${
+          isDark
+            ? 'bg-[#131B2A] border-[#1F293D] text-slate-100 shadow-[0_4px_20px_rgba(0,0,0,0.25)]'
+            : 'bg-white border-slate-200/80 text-slate-900 shadow-subtle'
+        }`}
+      >
         <div className="flex items-center justify-between mb-3">
           <div className="flex items-center gap-2">
-            <Shield className="w-4 h-4 text-indigo-500" />
-            <h3 className="text-xs font-semibold text-slate-900 uppercase tracking-wider">
+            <Shield className="w-4 h-4 text-indigo-400" />
+            <h3
+              className={`text-xs font-semibold uppercase tracking-wider ${
+                isDark ? 'text-white' : 'text-slate-900'
+              }`}
+            >
               Restricted Websites
             </h3>
           </div>
@@ -62,11 +74,19 @@ export const RestrictedSitesCard: React.FC<RestrictedSitesCardProps> = ({
             value={newDomain}
             onChange={e => setNewDomain(e.target.value)}
             placeholder="e.g. reddit.com"
-            className="flex-1 px-2.5 py-1.5 text-xs bg-slate-50 border border-slate-200 rounded-lg outline-none focus:border-indigo-400 focus:bg-white transition-all"
+            className={`flex-1 px-2.5 py-1.5 text-xs rounded-lg outline-none border focus:border-indigo-400 transition-all ${
+              isDark
+                ? 'bg-slate-900/80 border-slate-700 text-white placeholder-slate-500'
+                : 'bg-slate-50 border-slate-200 text-slate-800 placeholder-slate-400'
+            }`}
           />
           <button
             type="submit"
-            className="px-2.5 py-1.5 bg-slate-900 hover:bg-slate-800 text-white text-xs font-medium rounded-lg transition-all"
+            className={`px-2.5 py-1.5 text-xs font-medium rounded-lg transition-all cursor-pointer ${
+              isDark
+                ? 'bg-white hover:bg-slate-100 text-slate-900'
+                : 'bg-slate-900 hover:bg-slate-800 text-white'
+            }`}
           >
             <Plus className="w-3.5 h-3.5" />
           </button>
@@ -76,7 +96,11 @@ export const RestrictedSitesCard: React.FC<RestrictedSitesCardProps> = ({
           {sites.map(site => (
             <div
               key={site.id}
-              className="flex items-center justify-between p-2 rounded-xl bg-slate-50/60 hover:bg-slate-50 transition-colors border border-slate-100"
+              className={`flex items-center justify-between p-2 rounded-xl transition-colors border ${
+                isDark
+                  ? 'bg-slate-900/60 hover:bg-slate-800/80 border-slate-800/80'
+                  : 'bg-slate-50/60 hover:bg-slate-50 border-slate-100'
+              }`}
             >
               <div className="flex items-center gap-2 min-w-0">
                 <input
@@ -85,19 +109,31 @@ export const RestrictedSitesCard: React.FC<RestrictedSitesCardProps> = ({
                   onChange={() => onToggleSite(site.id)}
                   className="rounded border-slate-300 text-indigo-600 focus:ring-0 cursor-pointer"
                 />
-                <span className={`text-xs truncate ${site.enabled ? 'text-slate-800' : 'text-slate-400 line-through'}`}>
+                <span
+                  className={`text-xs truncate ${
+                    site.enabled
+                      ? isDark ? 'text-slate-200' : 'text-slate-800'
+                      : 'text-slate-500 line-through'
+                  }`}
+                >
                   {site.domain}
                 </span>
               </div>
               <div className="flex items-center gap-1.5 shrink-0">
                 {site.blockedCount > 0 && (
-                  <span className="text-[10px] text-rose-500 font-semibold bg-rose-50 px-1.5 py-0.5 rounded">
+                  <span
+                    className={`text-[10px] font-semibold px-1.5 py-0.5 rounded ${
+                      isDark
+                        ? 'text-rose-400 bg-rose-950/60 border border-rose-900/40'
+                        : 'text-rose-500 bg-rose-50'
+                    }`}
+                  >
                     {site.blockedCount} blocked
                   </span>
                 )}
                 <button
                   onClick={() => onRemoveSite(site.id)}
-                  className="p-1 text-slate-300 hover:text-rose-500 rounded transition-colors"
+                  className="p-1 text-slate-400 hover:text-rose-500 rounded transition-colors cursor-pointer"
                 >
                   <Trash2 className="w-3 h-3" />
                 </button>

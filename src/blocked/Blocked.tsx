@@ -169,6 +169,15 @@ export const BlockedIntervention: React.FC = () => {
     return false;
   });
 
+  const [attemptedDomain, setAttemptedDomain] = useState<string>(() => {
+    try {
+      const urlParams = new URLSearchParams(window.location.search);
+      return urlParams.get('domain') || '';
+    } catch {
+      return '';
+    }
+  });
+
   // Dynamic system theme listener
   useEffect(() => {
     if (typeof window !== 'undefined' && window.matchMedia) {
@@ -185,31 +194,56 @@ export const BlockedIntervention: React.FC = () => {
       setSession(data.history.present.activeSession);
       setWeather(data.weather);
       setRemainingSeconds(calculateRemainingSeconds(data.history.present.activeSession));
+      if (!attemptedDomain && data.history.present.restrictedSites.length > 0) {
+        setAttemptedDomain(data.history.present.restrictedSites[0].domain);
+      }
     });
 
     const unsubscribe = subscribeToStorage((data) => {
+      const isStillActive = data.history.present.activeSession?.status === 'active';
       setSession(data.history.present.activeSession);
       setWeather(data.weather);
       setRemainingSeconds(calculateRemainingSeconds(data.history.present.activeSession));
+
+      // If detox session was stopped, ended, or toggled off, automatically redirect back to the target site!
+      if (!isStillActive) {
+        const target = attemptedDomain || (data.history.present.restrictedSites[0]?.domain);
+        if (target) {
+          window.location.href = `https://${target}`;
+        } else if (window.history.length > 1) {
+          window.history.back();
+        }
+      }
     });
 
     return () => unsubscribe();
-  }, []);
+  }, [attemptedDomain]);
 
-  // Timer tick effect
+  // Timer tick effect with automatic refresh when timer runs out
   useEffect(() => {
     if (!session || session.status !== 'active') return;
+    if (session.isIndefinite) return;
 
     const interval = setInterval(() => {
       const remaining = calculateRemainingSeconds(session);
       setRemainingSeconds(remaining);
       if (remaining <= 0) {
+        clearInterval(interval);
         sendExtensionMessage({ type: 'SESSION_COMPLETE' });
+        // Automatically refresh back into the website!
+        const target = attemptedDomain || (session.selectedDomains && session.selectedDomains[0]);
+        if (target) {
+          window.location.href = `https://${target}`;
+        } else if (window.history.length > 1) {
+          window.history.back();
+        } else {
+          window.location.reload();
+        }
       }
     }, 1000);
 
     return () => clearInterval(interval);
-  }, [session]);
+  }, [session, attemptedDomain]);
 
   const handleReturnToFocus = () => {
     if (window.history.length > 1) {

@@ -15,6 +15,7 @@ export interface DetoxSession {
   id: string;
   durationMinutes: number;
   durationSeconds?: number;
+  isIndefinite?: boolean;
   startTime: number;
   endTime: number;
   status: SessionStatus;
@@ -122,7 +123,8 @@ export type ExtensionMessage =
   | { type: 'STATE_UPDATED'; state: HistoryState }
   | { type: 'TRIGGER_UNDO' }
   | { type: 'TRIGGER_REDO' }
-  | { type: 'SESSION_START'; durationMinutes?: number; durationSeconds?: number; domains?: string[] }
+  | { type: 'SESSION_START'; durationMinutes?: number; durationSeconds?: number; isIndefinite?: boolean; domains?: string[] }
+  | { type: 'TOGGLE_SHIELD'; enabled?: boolean }
   | { type: 'SESSION_PAUSE' }
   | { type: 'SESSION_RESUME' }
   | { type: 'SESSION_COMPLETE' }

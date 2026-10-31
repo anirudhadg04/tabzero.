@@ -7,6 +7,10 @@ export function calculateRemainingSeconds(session: DetoxSession | null): number 
     return Math.max(0, Math.round(session.pausedRemainingMs / 1000));
   }
   if (session.status === 'active') {
+    if (session.isIndefinite) {
+      // Returns elapsed seconds for indefinite manual mode
+      return Math.round((Date.now() - session.startTime) / 1000);
+    }
     const diff = session.endTime - Date.now();
     return Math.max(0, Math.round(diff / 1000));
   }
@@ -26,26 +30,32 @@ export function formatTimeRemaining(seconds: number): string {
 
 export function startDetoxSession(
   history: HistoryState,
-  durationInput: { totalSeconds?: number; durationMinutes?: number },
+  durationInput: { totalSeconds?: number; durationMinutes?: number; isIndefinite?: boolean },
   selectedDomains?: string[]
 ): HistoryState {
   const now = Date.now();
+  const isIndefinite = !!durationInput.isIndefinite;
   let totalSeconds = 30 * 60; // default 30 mins
 
-  if (durationInput.totalSeconds !== undefined && durationInput.totalSeconds > 0) {
-    totalSeconds = durationInput.totalSeconds;
-  } else if (durationInput.durationMinutes !== undefined && durationInput.durationMinutes > 0) {
-    totalSeconds = Math.round(durationInput.durationMinutes * 60);
+  if (!isIndefinite) {
+    if (durationInput.totalSeconds !== undefined && durationInput.totalSeconds > 0) {
+      totalSeconds = durationInput.totalSeconds;
+    } else if (durationInput.durationMinutes !== undefined && durationInput.durationMinutes > 0) {
+      totalSeconds = Math.round(durationInput.durationMinutes * 60);
+    }
+  } else {
+    totalSeconds = 0;
   }
 
-  const durationMs = totalSeconds * 1000;
-  const durationMinutes = Math.max(1, Math.round(totalSeconds / 60));
+  const durationMs = isIndefinite ? 86400000 * 365 : totalSeconds * 1000;
+  const durationMinutes = isIndefinite ? 0 : Math.max(1, Math.round(totalSeconds / 60));
   const domains = selectedDomains || history.present.restrictedSites.filter(s => s.enabled).map(s => s.domain);
 
   const newSession: DetoxSession = {
     id: `session_${now}`,
     durationMinutes,
     durationSeconds: totalSeconds,
+    isIndefinite,
     startTime: now,
     endTime: now + durationMs,
     status: 'active',
@@ -67,7 +77,7 @@ export function pauseDetoxSession(history: HistoryState): HistoryState {
   const session = history.present.activeSession;
   if (!session || session.status !== 'active') return history;
 
-  const remainingMs = Math.max(0, session.endTime - Date.now());
+  const remainingMs = session.isIndefinite ? 0 : Math.max(0, session.endTime - Date.now());
 
   const updatedSession: DetoxSession = {
     ...session,
@@ -96,7 +106,7 @@ export function resumeDetoxSession(history: HistoryState): HistoryState {
     ...session,
     status: 'active',
     startTime: now,
-    endTime: now + remainingMs,
+    endTime: session.isIndefinite ? now + 86400000 * 365 : now + remainingMs,
     pausedRemainingMs: 0,
   };
 
@@ -114,8 +124,11 @@ export function completeDetoxSession(history: HistoryState): HistoryState {
   const session = history.present.activeSession;
   if (!session) return history;
 
+  const elapsedMins = Math.max(1, Math.round((Date.now() - session.startTime) / (60 * 1000)));
+
   const completedSession: DetoxSession = {
     ...session,
+    durationMinutes: session.isIndefinite ? elapsedMins : session.durationMinutes,
     status: 'completed',
     completedAt: Date.now(),
   };

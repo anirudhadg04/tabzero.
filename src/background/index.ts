@@ -51,6 +51,35 @@ async function purgeRestrictedTabs(sites: RestrictedSite[]) {
   }
 }
 
+/**
+ * Scan all open tabs and restore any currently blocked tabs back to their original websites
+ */
+async function unblockAndRefreshTabs() {
+  if (typeof chrome === 'undefined' || !chrome.tabs) return;
+  try {
+    const tabs = await chrome.tabs.query({});
+    for (const tab of tabs) {
+      if (!tab.id || !tab.url) continue;
+      if (tab.url.includes('blocked.html')) {
+        try {
+          const parsed = new URL(tab.url);
+          const domain = parsed.searchParams.get('domain');
+          if (domain) {
+            console.log(`[tabzero Restore] Restoring tab ${tab.id} to https://${domain}`);
+            chrome.tabs.update(tab.id, { url: `https://${domain}` });
+          } else {
+            chrome.tabs.reload(tab.id);
+          }
+        } catch {
+          chrome.tabs.reload(tab.id);
+        }
+      }
+    }
+  } catch (e) {
+    console.warn('[tabzero ServiceWorker] Unblock and refresh error:', e);
+  }
+}
+
 // 1. Initialize Extension on install or start
 chrome.runtime.onInstalled.addListener(async () => {
   console.log('[tabzero ServiceWorker] Extension installed / initialized.');
@@ -87,13 +116,14 @@ chrome.alarms.onAlarm.addListener(async (alarm) => {
   if (alarm.name === 'check_session_tick') {
     const data = await getStorageData();
     const session = data.history.present.activeSession;
-    if (session && session.status === 'active') {
+    if (session && session.status === 'active' && !session.isIndefinite) {
       const now = Date.now();
       if (now >= session.endTime) {
-        console.log('[tabzero ServiceWorker] Active session time reached. Completing session.');
+        console.log('[tabzero ServiceWorker] Active session time reached. Completing session and refreshing blocked tabs.');
         data.history = completeDetoxSession(data.history);
         data.achievements = evaluateAchievements(data.achievements, data.history.present);
         await setStorageData(data);
+        await unblockAndRefreshTabs();
       }
     }
   } else if (alarm.name === 'refresh_weather_alarm') {
@@ -256,6 +286,8 @@ chrome.runtime.onMessage.addListener((message: ExtensionMessage, sender, sendRes
         await syncHistoryStateRules(data.history);
         if (data.history.present.activeSession?.status === 'active') {
           await purgeRestrictedTabs(data.history.present.restrictedSites);
+        } else {
+          await unblockAndRefreshTabs();
         }
         await setStorageData(data);
         sendResponse({ success: true, data });
@@ -268,6 +300,8 @@ chrome.runtime.onMessage.addListener((message: ExtensionMessage, sender, sendRes
         await syncHistoryStateRules(data.history);
         if (data.history.present.activeSession?.status === 'active') {
           await purgeRestrictedTabs(data.history.present.restrictedSites);
+        } else {
+          await unblockAndRefreshTabs();
         }
         await setStorageData(data);
         sendResponse({ success: true, data });
@@ -278,6 +312,7 @@ chrome.runtime.onMessage.addListener((message: ExtensionMessage, sender, sendRes
         data.history = startDetoxSession(data.history, {
           totalSeconds: message.durationSeconds,
           durationMinutes: message.durationMinutes,
+          isIndefinite: message.isIndefinite,
         }, message.domains);
         data.achievements = evaluateAchievements(data.achievements, data.history.present);
         await setStorageData(data);
@@ -287,9 +322,29 @@ chrome.runtime.onMessage.addListener((message: ExtensionMessage, sender, sendRes
         break;
       }
 
+      case 'TOGGLE_SHIELD': {
+        const isCurrentlyActive = data.history.present.activeSession?.status === 'active';
+        const shouldEnable = message.enabled !== undefined ? message.enabled : !isCurrentlyActive;
+
+        if (shouldEnable) {
+          data.history = startDetoxSession(data.history, { isIndefinite: true });
+          data.achievements = evaluateAchievements(data.achievements, data.history.present);
+          await setStorageData(data);
+          await purgeRestrictedTabs(data.history.present.restrictedSites);
+        } else {
+          data.history = cancelDetoxSession(data.history);
+          data.achievements = evaluateAchievements(data.achievements, data.history.present);
+          await setStorageData(data);
+          await unblockAndRefreshTabs();
+        }
+        sendResponse({ success: true, data });
+        break;
+      }
+
       case 'SESSION_PAUSE': {
         data.history = pauseDetoxSession(data.history);
         await setStorageData(data);
+        await unblockAndRefreshTabs();
         sendResponse({ success: true, data });
         break;
       }
@@ -306,6 +361,7 @@ chrome.runtime.onMessage.addListener((message: ExtensionMessage, sender, sendRes
         data.history = completeDetoxSession(data.history);
         data.achievements = evaluateAchievements(data.achievements, data.history.present);
         await setStorageData(data);
+        await unblockAndRefreshTabs();
         sendResponse({ success: true, data });
         break;
       }
@@ -314,6 +370,7 @@ chrome.runtime.onMessage.addListener((message: ExtensionMessage, sender, sendRes
         data.history = cancelDetoxSession(data.history);
         data.achievements = evaluateAchievements(data.achievements, data.history.present);
         await setStorageData(data);
+        await unblockAndRefreshTabs();
         sendResponse({ success: true, data });
         break;
       }

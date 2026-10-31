@@ -65,9 +65,23 @@ async function handleLocalFallback(message: ExtensionMessage): Promise<OfflineSt
       data.history = startDetoxSession(data.history, {
         totalSeconds: message.durationSeconds,
         durationMinutes: message.durationMinutes,
+        isIndefinite: message.isIndefinite,
       }, message.domains);
       data.achievements = evaluateAchievements(data.achievements, data.history.present);
       break;
+
+    case 'TOGGLE_SHIELD': {
+      const isCurrentlyActive = data.history.present.activeSession?.status === 'active';
+      const shouldEnable = message.enabled !== undefined ? message.enabled : !isCurrentlyActive;
+      if (shouldEnable) {
+        data.history = startDetoxSession(data.history, { isIndefinite: true });
+        data.achievements = evaluateAchievements(data.achievements, data.history.present);
+      } else {
+        data.history = cancelDetoxSession(data.history);
+        data.achievements = evaluateAchievements(data.achievements, data.history.present);
+      }
+      break;
+    }
 
     case 'SESSION_PAUSE':
       data.history = pauseDetoxSession(data.history);
