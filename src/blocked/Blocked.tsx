@@ -236,14 +236,15 @@ export const BlockedIntervention: React.FC = () => {
     return () => unsubscribe();
   }, [attemptedDomain]);
 
-  // Timer tick effect with automatic redirect when timer runs out
+  // Timer tick effect with automatic redirect when timed session runs out
   useEffect(() => {
     if (!session || session.status !== 'active') return;
 
     const interval = setInterval(() => {
       const remaining = calculateRemainingSeconds(session);
       setRemainingSeconds(remaining);
-      if (remaining <= 0) {
+      // Auto-completion ONLY applies to timed sessions, NEVER to permanent indefinite mode
+      if (!session.isIndefinite && remaining <= 0) {
         clearInterval(interval);
         sendExtensionMessage({ type: 'SESSION_COMPLETE' });
         // Automatically restore and redirect into the original website!
@@ -382,7 +383,7 @@ export const BlockedIntervention: React.FC = () => {
           )}
         </div>
 
-        {/* Translucent Glass Countdown Timer Card */}
+        {/* Translucent Glass Countdown / Active Shield Card */}
         {session && session.status === 'active' && (
           <div
             className={`w-full max-w-xs rounded-2xl p-4 sm:p-5 border shadow-card backdrop-blur-xl transition-all duration-300 ${
@@ -397,11 +398,16 @@ export const BlockedIntervention: React.FC = () => {
               }`}
             >
               <Clock className="w-3.5 h-3.5" />
-              <span>Session Remaining</span>
+              <span>{session.isIndefinite ? 'Permanent Shield Active' : 'Session Remaining'}</span>
             </div>
             <div className="font-mono text-4xl sm:text-5xl font-light tracking-tight drop-shadow-sm">
               {formatTimeRemaining(remainingSeconds)}
             </div>
+            {session.isIndefinite && (
+              <p className="text-[11px] text-emerald-400 font-medium mt-1 drop-shadow-sm">
+                Active until manually turned OFF in tabzero.
+              </p>
+            )}
           </div>
         )}
 

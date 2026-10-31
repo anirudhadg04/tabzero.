@@ -5,7 +5,7 @@ import { calculateRemainingSeconds, formatTimeRemaining } from '../services/sess
 
 interface DetoxTimerCardProps {
   session: DetoxSession | null;
-  onStart: (totalSeconds: number) => void;
+  onStart: (totalSeconds: number, isIndefinite?: boolean) => void;
   onPause: () => void;
   onResume: () => void;
   onComplete: () => void;
@@ -44,7 +44,7 @@ export const DetoxTimerCard: React.FC<DetoxTimerCardProps> = ({
     const interval = setInterval(() => {
       const current = calculateRemainingSeconds(session);
       setTimeValue(current);
-      if (current <= 0) {
+      if (!session.isIndefinite && current <= 0) {
         onComplete();
       }
     }, 1000);
@@ -81,8 +81,8 @@ export const DetoxTimerCard: React.FC<DetoxTimerCardProps> = ({
     if (isActive) {
       onCancel();
     } else {
-      const totalSecs = selectedTotalSeconds > 0 ? selectedTotalSeconds : 1800;
-      onStart(totalSecs);
+      // Permanent Always-On mode: stays ON indefinitely until manually toggled OFF
+      onStart(0, true);
     }
   };
 
@@ -113,14 +113,18 @@ export const DetoxTimerCard: React.FC<DetoxTimerCardProps> = ({
                 isDark ? 'text-slate-300' : 'text-slate-600'
               }`}
             >
-              {isActive ? 'Detox Active' : isPaused ? 'Detox Paused' : 'Set Disconnect Time'}
+              {isActive
+                ? (session?.isIndefinite ? 'Detox Active (Permanent)' : 'Detox Active')
+                : isPaused
+                ? 'Detox Paused'
+                : 'Set Disconnect Time'}
             </span>
 
             {/* On / Off Button directly next to Set Disconnect Time */}
             <button
               type="button"
               onClick={handleToggleOnOff}
-              title={isActive ? 'Detox is Active. Click to Turn OFF' : 'Detox is Inactive. Click to Turn ON'}
+              title={isActive ? 'Detox is Active. Click to Turn OFF' : 'Click to Turn ON (Permanent until turned off)'}
               className={`flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[10px] font-bold transition-all cursor-pointer ${
                 isActive
                   ? 'bg-emerald-500 hover:bg-emerald-600 text-white shadow-[0_0_10px_rgba(16,185,129,0.35)]'
@@ -134,9 +138,15 @@ export const DetoxTimerCard: React.FC<DetoxTimerCardProps> = ({
             </button>
           </div>
 
-          {session && (
+          {session && !session.isIndefinite && (
             <span className="text-[11px] font-medium text-slate-400">
               {progressPercent}%
+            </span>
+          )}
+          {session && session.isIndefinite && (
+            <span className="text-[10px] font-semibold text-emerald-500 flex items-center gap-1">
+              <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" />
+              ALWAYS ON
             </span>
           )}
         </div>
@@ -151,18 +161,28 @@ export const DetoxTimerCard: React.FC<DetoxTimerCardProps> = ({
               >
                 {formatTimeRemaining(timeValue)}
               </span>
+              <span className={`text-[11px] ${isDark ? 'text-slate-400' : 'text-slate-500'}`}>
+                {session.isIndefinite ? 'time elapsed' : 'remaining'}
+              </span>
             </div>
 
-            <div
-              className={`w-full rounded-full h-1.5 mb-4 overflow-hidden ${
-                isDark ? 'bg-slate-800' : 'bg-slate-100'
-              }`}
-            >
+            {!session.isIndefinite ? (
               <div
-                className="bg-indigo-400 h-1.5 rounded-full transition-all duration-1000"
-                style={{ width: `${progressPercent}%` }}
-              />
-            </div>
+                className={`w-full rounded-full h-1.5 mb-4 overflow-hidden ${
+                  isDark ? 'bg-slate-800' : 'bg-slate-100'
+                }`}
+              >
+                <div
+                  className="bg-indigo-400 h-1.5 rounded-full transition-all duration-1000"
+                  style={{ width: `${progressPercent}%` }}
+                />
+              </div>
+            ) : (
+              <div className="flex items-center gap-1.5 text-[11px] text-emerald-500 font-medium mb-3">
+                <Shield className="w-3.5 h-3.5" />
+                <span>Permanent shield active until turned OFF</span>
+              </div>
+            )}
 
             <div className="flex items-center gap-2 mt-2">
               {isActive ? (
@@ -323,14 +343,18 @@ export const DetoxTimerCard: React.FC<DetoxTimerCardProps> = ({
               }`}
             />
             <h2 className={`text-lg font-semibold tracking-tight ${isDark ? 'text-white' : 'text-slate-900'}`}>
-              {isActive ? 'Digital Detox in Progress' : isPaused ? 'Detox Paused' : 'Begin Digital Detox'}
+              {isActive
+                ? (session?.isIndefinite ? 'Permanent Digital Detox Active' : 'Digital Detox in Progress')
+                : isPaused
+                ? 'Detox Paused'
+                : 'Begin Digital Detox'}
             </h2>
 
             {/* On / Off Button */}
             <button
               type="button"
               onClick={handleToggleOnOff}
-              title={isActive ? 'Detox is Active. Click to Turn OFF' : 'Detox is Inactive. Click to Turn ON'}
+              title={isActive ? 'Detox is Active. Click to Turn OFF' : 'Click to Turn ON (Permanent until turned off)'}
               className={`flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-bold transition-all cursor-pointer ml-1 ${
                 isActive
                   ? 'bg-emerald-500 hover:bg-emerald-600 text-white shadow-[0_0_12px_rgba(16,185,129,0.4)]'
@@ -345,8 +369,10 @@ export const DetoxTimerCard: React.FC<DetoxTimerCardProps> = ({
           </div>
           <p className="text-xs text-slate-400 max-w-md">
             {isActive
-              ? 'Distracting websites are locked down. Step away from your screen and embrace the real world.'
-              : 'Choose your desired disconnect window to shield distracting sites and reclaim presence.'}
+              ? (session?.isIndefinite
+                  ? 'Websites are permanently locked down until turned OFF. Step away and embrace real life.'
+                  : 'Distracting websites are locked down. Step away from your screen and embrace the real world.')
+              : 'Choose your desired disconnect window or toggle ON for permanent distraction shielding.'}
           </p>
         </div>
 
@@ -358,7 +384,9 @@ export const DetoxTimerCard: React.FC<DetoxTimerCardProps> = ({
               }`}>
                 {formatTimeRemaining(timeValue)}
               </span>
-              <p className="text-xs text-slate-400 mt-1">{progressPercent}% session elapsed</p>
+              <p className="text-xs text-slate-400 mt-1">
+                {session.isIndefinite ? 'Continuous mindful time elapsed' : `${progressPercent}% session elapsed`}
+              </p>
             </div>
 
             <div className="flex items-center gap-2">

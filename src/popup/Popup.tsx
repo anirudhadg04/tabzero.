@@ -70,11 +70,12 @@ export const Popup: React.FC = () => {
     setData(updated);
   };
 
-  const handleStartSession = async (totalSeconds: number) => {
+  const handleStartSession = async (totalSeconds: number, isIndefinite?: boolean) => {
     const updated = await sendExtensionMessage({
       type: 'SESSION_START',
       durationSeconds: totalSeconds,
       durationMinutes: Math.max(1, Math.round(totalSeconds / 60)),
+      isIndefinite: !!isIndefinite,
     });
     setData(updated);
   };
