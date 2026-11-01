@@ -213,6 +213,16 @@ export const BlockedIntervention: React.FC = () => {
 
   const isDarkMode = themePref === 'dark' ? true : themePref === 'light' ? false : systemIsDark;
 
+  useEffect(() => {
+    if (typeof document !== 'undefined') {
+      if (isDarkMode) {
+        document.documentElement.classList.add('dark');
+      } else {
+        document.documentElement.classList.remove('dark');
+      }
+    }
+  }, [isDarkMode]);
+
   const redirectToOriginalSite = () => {
     if (attemptedDomain) {
       let targetUrl = attemptedDomain.trim();

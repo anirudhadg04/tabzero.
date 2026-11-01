@@ -48,6 +48,16 @@ export const Popup: React.FC = () => {
   const themePref = data.themePreference || 'system';
   const isDarkMode = themePref === 'dark' ? true : themePref === 'light' ? false : systemIsDark;
 
+  useEffect(() => {
+    if (typeof document !== 'undefined') {
+      if (isDarkMode) {
+        document.documentElement.classList.add('dark');
+      } else {
+        document.documentElement.classList.remove('dark');
+      }
+    }
+  }, [isDarkMode]);
+
   const handleToggleTheme = async () => {
     const nextTheme: 'system' | 'light' | 'dark' =
       themePref === 'system' ? 'dark' : themePref === 'dark' ? 'light' : 'system';

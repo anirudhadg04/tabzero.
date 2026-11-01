@@ -141,6 +141,17 @@ export const Dashboard: React.FC = () => {
   const themePref = data.themePreference || 'system';
   const isDarkMode = themePref === 'dark' ? true : themePref === 'light' ? false : systemIsDark;
 
+  // Sync Tailwind .dark class to root document element so dark: utility classes apply
+  useEffect(() => {
+    if (typeof document !== 'undefined') {
+      if (isDarkMode) {
+        document.documentElement.classList.add('dark');
+      } else {
+        document.documentElement.classList.remove('dark');
+      }
+    }
+  }, [isDarkMode]);
+
   // Handlers
   const handleToggleTheme = async () => {
     const nextTheme: 'system' | 'light' | 'dark' =
@@ -381,7 +392,7 @@ export const Dashboard: React.FC = () => {
     <div
       className={`min-h-screen pb-28 antialiased transition-colors duration-200 ${
         isDarkMode
-          ? 'bg-[#121316] text-[#EDEDEB]'
+          ? 'dark bg-[#121316] text-[#EDEDEB]'
           : 'bg-[#FAF9F6] text-[#1A1C1E]'
       }`}
     >
@@ -738,15 +749,17 @@ export const Dashboard: React.FC = () => {
         >
           <div className="flex items-center justify-between pb-4 border-b border-stone-100 dark:border-stone-800 mb-4">
             <div>
-              <h3 className="text-sm font-semibold tracking-tight text-stone-900 dark:text-stone-100 flex items-center gap-2">
-                <Globe className="w-4 h-4 text-sage-600 dark:text-sage-400" />
+              <h3 className={`text-sm font-semibold tracking-tight flex items-center gap-2 ${
+                isDarkMode ? 'text-[#EDEDEB]' : 'text-stone-900'
+              }`}>
+                <Globe className={`w-4 h-4 ${isDarkMode ? 'text-sage-400' : 'text-sage-600'}`} />
                 Website Usage Today
               </h3>
-              <p className="text-xs text-stone-500 dark:text-stone-400 mt-0.5">
+              <p className={`text-xs mt-0.5 ${isDarkMode ? 'text-stone-400' : 'text-stone-500'}`}>
                 Screen time tracked from your focused tabs today.
               </p>
             </div>
-            <span className="font-mono text-xs tabular-nums text-stone-400">
+            <span className={`font-mono text-xs tabular-nums ${isDarkMode ? 'text-stone-300' : 'text-stone-500'}`}>
               Total: {formatDuration(totalBrowsingSeconds)}
             </span>
           </div>
@@ -761,17 +774,21 @@ export const Dashboard: React.FC = () => {
                 <div
                   key={item.domain}
                   className={`flex items-center justify-between py-2 px-3 rounded-lg text-xs transition-colors ${
-                    isDarkMode ? 'bg-[#121316]/50' : 'bg-[#FAF9F6]'
+                    isDarkMode
+                      ? 'bg-[#141518] text-stone-200 border border-[#23252B]'
+                      : 'bg-[#FAF9F6] text-stone-800 border border-[#F0EFEA]'
                   }`}
                 >
                   <div className="flex items-center gap-3 min-w-0 flex-1 pr-4">
                     <span className="font-mono text-stone-400 w-5 tabular-nums text-[11px]">
                       {String(index + 1).padStart(2, '0')}
                     </span>
-                    <span className="font-medium text-stone-800 dark:text-stone-200 truncate w-36 sm:w-48">
+                    <span className={`font-medium truncate w-36 sm:w-48 ${
+                      isDarkMode ? 'text-[#EDEDEB]' : 'text-stone-800'
+                    }`}>
                       {item.domain}
                     </span>
-                    <div className="flex-1 hidden sm:block bg-stone-200/50 dark:bg-stone-800 rounded-full h-1 overflow-hidden">
+                    <div className="flex-1 hidden sm:block bg-stone-200/50 dark:bg-stone-700/60 rounded-full h-1 overflow-hidden">
                       <div
                         className="bg-sage-600 h-full rounded-full"
                         style={{ width: `${pct}%` }}
@@ -783,7 +800,9 @@ export const Dashboard: React.FC = () => {
                     <span className="font-mono text-[11px] tabular-nums text-stone-400 w-10 text-right">
                       {pct}%
                     </span>
-                    <span className="font-mono text-xs tabular-nums font-semibold text-stone-900 dark:text-stone-100 w-16 text-right">
+                    <span className={`font-mono text-xs tabular-nums font-semibold w-16 text-right ${
+                      isDarkMode ? 'text-[#EDEDEB]' : 'text-stone-900'
+                    }`}>
                       {formatDuration(item.timeSpentSeconds)}
                     </span>
                   </div>
