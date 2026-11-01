@@ -35,7 +35,6 @@ export const WeatherActivityCard: React.FC<WeatherActivityCardProps> = ({
     }, 4000);
   };
 
-  // Centralized single source of truth for normalized weather
   const formatted = formatWeather(weather);
   const recommendations = generateRecommendations(weather);
 
@@ -45,79 +44,71 @@ export const WeatherActivityCard: React.FC<WeatherActivityCardProps> = ({
 
     return (
       <div
-        className={`rounded-2xl p-4 border transition-colors duration-300 ${
+        className={`rounded-xl p-3.5 border transition-colors ${
           isDark
-            ? 'bg-[#131B2A] border-[#1F293D] text-slate-100 shadow-[0_4px_20px_rgba(0,0,0,0.25)]'
-            : 'bg-white border-slate-200/80 text-slate-900 shadow-subtle'
+            ? 'bg-[#191B1F] border-[#282A30] text-[#EDEDEB]'
+            : 'bg-[#FFFFFF] border-[#E8E7E3] text-[#1A1C1E] shadow-subtle'
         }`}
       >
-        <div className="flex items-center justify-between mb-3">
-          <div className="flex items-center gap-2.5">
+        <div className="flex items-center justify-between mb-2.5">
+          <div className="flex items-center gap-2">
             {formatted ? (
-              <span className="text-xl leading-none select-none" role="img" aria-label={formatted.description}>
+              <span className="text-base select-none" role="img" aria-label={formatted.description}>
                 {formatted.emoji}
               </span>
             ) : (
-              <CloudOff className={`w-5 h-5 ${isDark ? 'text-slate-500' : 'text-slate-400'}`} />
+              <CloudOff className="w-4 h-4 text-stone-400" />
             )}
             <div>
-              <h4 className={`text-xs font-semibold ${isDark ? 'text-white' : 'text-slate-800'}`}>
+              <h4 className="text-xs font-semibold">
                 {formatted ? `${formatted.temperatureText} · ${formatted.description}` : 'Weather unavailable'}
               </h4>
-              <p className="text-[10px] text-slate-400 flex items-center gap-1">
-                <span>{formatted ? formatted.locationText : 'Fetching forecast...'}</span>
-                {formatted?.isCached && (
-                  <span className="opacity-75 font-medium text-[9px] px-1 py-0.2 bg-slate-200 dark:bg-slate-800 rounded">
-                    Cached
-                  </span>
-                )}
+              <p className="text-[10px] text-stone-400">
+                {formatted ? formatted.locationText : 'Fetching forecast...'}
               </p>
             </div>
           </div>
           <button
             onClick={handleRefresh}
-            title="Refresh Open-Meteo live weather"
-            className={`p-1.5 rounded-lg transition-colors cursor-pointer ${
-              isDark ? 'text-slate-400 hover:text-white' : 'text-slate-400 hover:text-slate-600'
-            }`}
+            title="Refresh weather"
+            className="p-1 text-stone-400 hover:text-stone-700 dark:hover:text-stone-200 transition-colors cursor-pointer"
           >
-            <RefreshCw className={`w-3.5 h-3.5 ${refreshing ? 'animate-spin text-indigo-400' : ''}`} />
+            <RefreshCw className={`w-3 h-3 ${refreshing ? 'animate-spin text-sage-600' : ''}`} />
           </button>
         </div>
 
         {topRec && (
           <div
-            className={`p-2.5 rounded-xl border flex items-center justify-between ${
+            className={`p-2 rounded-lg border flex items-center justify-between gap-2 text-xs transition-colors ${
               isDark
-                ? 'bg-slate-900/60 border-slate-800'
-                : 'bg-slate-50 border-slate-100'
+                ? 'bg-[#121316]/60 border-[#282A30]/60'
+                : 'bg-[#FAF9F6] border-[#F0EFEA]'
             }`}
           >
-            <div className="min-w-0 pr-2">
-              <span className="text-[10px] font-semibold text-indigo-400 uppercase tracking-wide">
-                Weather Suggestion
+            <div className="min-w-0">
+              <p className="text-xs font-medium truncate">{topRec.title}</p>
+              <span className="font-mono text-[10px] tabular-nums text-stone-400">
+                {topRec.durationMinutes}m offline
               </span>
-              <p className={`text-xs font-medium truncate ${isDark ? 'text-slate-200' : 'text-slate-800'}`}>
-                {topRec.title}
-              </p>
             </div>
+
             <button
               onClick={() => handleAdd(topRec)}
               disabled={isTopAdded}
-              className={`px-2.5 py-1 text-[11px] font-medium rounded-lg border transition-all shrink-0 cursor-pointer flex items-center gap-1 ${
+              className={`flex items-center gap-1 px-2 py-1 rounded text-[11px] font-medium transition-colors shrink-0 cursor-pointer ${
                 isTopAdded
-                  ? 'bg-emerald-500 text-white border-emerald-500 shadow-sm'
-                  : isDark
-                  ? 'bg-slate-800 hover:bg-slate-700 text-slate-200 border-slate-700'
-                  : 'bg-white hover:bg-slate-100 text-slate-700 border-slate-200 shadow-sm'
+                  ? 'bg-sage-100 text-sage-800 dark:bg-sage-950 dark:text-sage-300'
+                  : 'bg-sage-600 hover:bg-sage-700 text-white shadow-subtle'
               }`}
             >
               {isTopAdded ? (
                 <>
-                  <Check className="w-3 h-3 text-white" /> Planned
+                  <Check className="w-3 h-3" /> Planned
                 </>
               ) : (
-                '+ Plan'
+                <>
+                  <Plus className="w-3 h-3" /> Plan
+                </>
               )}
             </button>
           </div>
@@ -128,136 +119,98 @@ export const WeatherActivityCard: React.FC<WeatherActivityCardProps> = ({
 
   return (
     <div
-      className={`rounded-2xl p-6 border transition-colors ${
+      className={`rounded-xl p-5 border transition-colors ${
         isDark
-          ? 'bg-[#131B2A] border-[#1F293D] text-slate-100 shadow-[0_4px_20px_rgba(0,0,0,0.25)]'
-          : 'bg-white border-slate-200/80 text-slate-900 shadow-subtle'
+          ? 'bg-[#191B1F] border-[#282A30] text-[#EDEDEB]'
+          : 'bg-[#FFFFFF] border-[#E8E7E3] text-[#1A1C1E] shadow-subtle'
       }`}
     >
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-6">
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-4 border-b border-stone-100 dark:border-stone-800 mb-5">
         <div>
-          <div className="flex items-center gap-2 mb-1">
-            <h3 className={`text-base font-medium tracking-tight ${isDark ? 'text-white' : 'text-slate-900'}`}>
-              Weather & Offline Suggestions
-            </h3>
-            <span className="text-[10px] font-semibold bg-emerald-50 text-emerald-700 border border-emerald-200/60 px-2 py-0.5 rounded-full">
-              Open-Meteo Live
-            </span>
-            {formatted?.isCached && (
-              <span className="text-[10px] font-semibold bg-amber-50 text-amber-700 border border-amber-200/60 px-2 py-0.5 rounded-full">
-                Cached {formatted.observationTimeText && `(${formatted.observationTimeText})`}
-              </span>
-            )}
-          </div>
-          <p className="text-xs text-slate-400">
-            Real atmospheric conditions calibrated to meaningful real-world offline activities.
+          <h3 className="text-sm font-semibold tracking-tight">Weather & Offline Suggestions</h3>
+          <p className="text-xs text-stone-500 dark:text-stone-400 mt-0.5">
+            Real atmospheric conditions calibrated to meaningful offline activities.
           </p>
         </div>
 
         <div className="flex items-center gap-3">
-          {formatted ? (
-            <div className={`flex items-center gap-3 border px-3.5 py-2 rounded-xl ${
-              isDark ? 'bg-slate-900/60 border-slate-800' : 'bg-slate-50 border-slate-200/80'
-            }`}>
-              <div className="flex items-center gap-2.5">
-                <span className="text-2xl leading-none select-none" role="img" aria-label={formatted.description}>
-                  {formatted.emoji}
+          {formatted && (
+            <div className="flex items-center gap-3 text-xs text-stone-500">
+              <span className="flex items-center gap-1">
+                <span className="text-base select-none">{formatted.emoji}</span>
+                <span className="font-mono font-medium text-stone-900 dark:text-stone-100">
+                  {formatted.temperatureText}
                 </span>
-                <div>
-                  <div className="flex items-baseline gap-1.5">
-                    <span className={`text-base font-semibold ${isDark ? 'text-white' : 'text-slate-900'}`}>
-                      {formatted.temperatureText}
-                    </span>
-                    <span className="text-xs text-slate-400 font-medium">{formatted.description}</span>
-                  </div>
-                  <span className="text-[11px] text-slate-400">{formatted.locationText}</span>
-                </div>
-              </div>
-
-              <div className={`h-6 w-px ${isDark ? 'bg-slate-800' : 'bg-slate-200'}`} />
-
-              <div className="flex items-center gap-3 text-slate-400 text-xs">
-                <span className="flex items-center gap-1" title="Relative Humidity">
-                  <Droplets className="w-3.5 h-3.5 text-sky-400" /> {formatted.humidity}%
-                </span>
-                <span className="flex items-center gap-1" title="Wind Speed">
-                  <Wind className="w-3.5 h-3.5 text-slate-400" /> {formatted.windSpeed} km/h
-                </span>
-              </div>
-            </div>
-          ) : (
-            <div className={`flex items-center gap-2 text-xs italic border px-3 py-2 rounded-xl ${
-              isDark ? 'bg-slate-900/60 border-slate-800 text-slate-400' : 'bg-slate-50 border-slate-200 text-slate-400'
-            }`}>
-              <CloudOff className="w-4 h-4 text-slate-400" />
-              <span>Weather unavailable</span>
+                <span>{formatted.description}</span>
+              </span>
+              <span className="text-stone-300 dark:text-stone-700">•</span>
+              <span className="flex items-center gap-1">
+                <Droplets className="w-3.5 h-3.5 text-stone-400" /> {formatted.humidity}%
+              </span>
+              <span className="flex items-center gap-1">
+                <Wind className="w-3.5 h-3.5 text-stone-400" /> {formatted.windSpeed} km/h
+              </span>
             </div>
           )}
 
           <button
             onClick={handleRefresh}
-            title="Refresh Open-Meteo weather"
-            className={`p-2 border rounded-xl transition-all cursor-pointer ${
-              isDark
-                ? 'bg-slate-800 hover:bg-slate-700 text-slate-300 border-slate-700'
-                : 'bg-slate-50 hover:bg-slate-100 text-slate-600 border-slate-200/80'
-            }`}
+            title="Refresh live weather"
+            className="p-1.5 rounded-lg border border-stone-200 dark:border-stone-700 hover:bg-stone-50 dark:hover:bg-stone-800 text-stone-500 transition-colors cursor-pointer"
           >
-            <RefreshCw className={`w-4 h-4 ${refreshing ? 'animate-spin text-indigo-400' : ''}`} />
+            <RefreshCw className={`w-3.5 h-3.5 ${refreshing ? 'animate-spin text-sage-600' : ''}`} />
           </button>
         </div>
       </div>
 
-      {/* Suggested Weather-Aware Activities */}
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-3.5">
+      {/* Suggested Activities Grid */}
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
         {recommendations.map(rec => {
           const isAdded = !!addedIds[rec.id];
           return (
             <div
               key={rec.id}
-              className={`p-4 rounded-xl border transition-all flex flex-col justify-between ${
+              className={`p-3.5 rounded-lg border flex flex-col justify-between transition-colors ${
                 isDark
-                  ? 'bg-slate-900/60 border-slate-800 hover:border-slate-700'
-                  : 'bg-slate-50/50 border-slate-200/80 hover:bg-white hover:border-slate-300 hover:shadow-subtle'
+                  ? 'bg-[#121316]/50 border-[#282A30]'
+                  : 'bg-[#FAF9F6] border-[#EAE9E4]'
               }`}
             >
               <div>
-                <div className="flex items-center justify-between gap-2 mb-2">
-                  <span className="text-xs font-semibold px-2 py-0.5 rounded-full bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300 font-mono">
-                    {rec.durationMinutes}m
+                <div className="flex items-center justify-between mb-2">
+                  <span className="font-mono text-[11px] tabular-nums text-stone-400 font-medium">
+                    {rec.durationMinutes}m offline
+                  </span>
+                  <span className="text-[10px] text-stone-400 italic">
+                    {rec.weatherTag}
                   </span>
                 </div>
 
-                <h4 className={`text-sm font-medium mb-1 ${isDark ? 'text-white' : 'text-slate-800'}`}>
+                <h4 className="text-xs font-semibold text-stone-900 dark:text-stone-100 mb-1">
                   {rec.title}
                 </h4>
-                <p className="text-xs text-slate-400 line-clamp-2 leading-relaxed mb-3">
+                <p className="text-[11px] text-stone-500 dark:text-stone-400 leading-relaxed">
                   {rec.description}
                 </p>
               </div>
 
-              <div className={`flex items-center justify-between pt-2 border-t ${
-                isDark ? 'border-slate-800' : 'border-slate-100'
-              }`}>
-                <span className="text-[10px] text-slate-400 italic">{rec.weatherTag}</span>
+              <div className="pt-3 mt-3 border-t border-stone-200/60 dark:border-stone-800 flex justify-end">
                 <button
                   onClick={() => handleAdd(rec)}
                   disabled={isAdded}
-                  className={`flex items-center gap-1 px-3 py-1 text-xs font-medium rounded-lg transition-all cursor-pointer ${
+                  className={`flex items-center gap-1 px-3 py-1 rounded-md text-xs font-medium transition-colors cursor-pointer ${
                     isAdded
-                      ? 'bg-emerald-500 text-white shadow-sm'
-                      : isDark
-                      ? 'bg-slate-800 hover:bg-slate-700 text-slate-200 border border-slate-700'
-                      : 'bg-white hover:bg-slate-100 text-slate-700 border border-slate-200 shadow-sm active:scale-95'
+                      ? 'bg-sage-100 text-sage-800 dark:bg-sage-950 dark:text-sage-300'
+                      : 'bg-sage-600 hover:bg-sage-700 text-white shadow-subtle'
                   }`}
                 >
                   {isAdded ? (
                     <>
-                      <Check className="w-3.5 h-3.5 text-white" /> Planned
+                      <Check className="w-3 h-3" /> Planned
                     </>
                   ) : (
                     <>
-                      <Plus className="w-3.5 h-3.5" /> Plan Activity
+                      <Plus className="w-3 h-3" /> Plan Activity
                     </>
                   )}
                 </button>

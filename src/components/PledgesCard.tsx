@@ -57,43 +57,46 @@ export const PledgesCard: React.FC<PledgesCardProps> = ({
     const pendingActivities = activities.filter(a => !a.completed);
     return (
       <div
-        className={`rounded-2xl p-4 border transition-colors ${
+        className={`rounded-xl p-3.5 border transition-colors ${
           isDark
-            ? 'bg-[#131B2A] border-[#1F293D] shadow-[0_4px_20px_rgba(0,0,0,0.25)] text-slate-100'
-            : 'bg-white border-slate-200/80 shadow-subtle text-slate-900'
+            ? 'bg-[#191B1F] border-[#282A30] text-[#EDEDEB]'
+            : 'bg-[#FFFFFF] border-[#E8E7E3] text-[#1A1C1E] shadow-subtle'
         }`}
       >
         <div className="flex items-center justify-between mb-2">
           <div className="flex items-center gap-1.5">
-            <Target className="w-3.5 h-3.5 text-indigo-400" />
-            <h4 className="text-xs font-semibold uppercase tracking-wide">
+            <Target className="w-3.5 h-3.5 text-sage-600 dark:text-sage-400" />
+            <h4 className="text-xs font-medium uppercase tracking-wider text-stone-500 dark:text-stone-400">
               Planned Activities
             </h4>
           </div>
-          <span className="text-[11px] text-slate-400 font-medium">
+          <span className="font-mono text-[11px] tabular-nums text-stone-400">
             {pendingActivities.length} pending
           </span>
         </div>
 
-        <div className="space-y-1.5 max-h-36 overflow-y-auto">
+        <div className="space-y-1 max-h-36 overflow-y-auto pr-0.5">
           {pendingActivities.slice(0, 3).map(act => (
             <div
               key={act.id}
-              className={`flex items-center justify-between p-2 rounded-lg border text-xs ${
-                isDark ? 'bg-slate-900/60 border-slate-800' : 'bg-slate-50 border-slate-100'
+              className={`flex items-center justify-between py-1.5 px-2 rounded-md border text-xs transition-colors ${
+                isDark ? 'bg-[#121316]/60 border-[#282A30]/60' : 'bg-[#FAF9F6] border-[#F0EFEA]'
               }`}
             >
-              <span className={`truncate pr-2 ${isDark ? 'text-slate-200' : 'text-slate-700'}`}>{act.title}</span>
+              <span className={`truncate pr-2 ${isDark ? 'text-stone-200' : 'text-stone-700'}`}>
+                {act.title}
+              </span>
               <button
                 onClick={() => onCompleteActivity(act.id)}
-                className="text-emerald-500 hover:text-emerald-400 p-0.5 rounded cursor-pointer"
+                className="text-sage-600 hover:text-sage-700 p-0.5 rounded cursor-pointer transition-colors"
+                title="Mark complete"
               >
                 <Circle className="w-3.5 h-3.5" />
               </button>
             </div>
           ))}
           {pendingActivities.length === 0 && (
-            <p className="text-xs text-slate-400 italic py-1">No activities planned right now.</p>
+            <p className="text-xs text-stone-400 italic py-1">No activities planned right now.</p>
           )}
         </div>
       </div>
@@ -101,51 +104,43 @@ export const PledgesCard: React.FC<PledgesCardProps> = ({
   }
 
   return (
-    <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+    <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
       {/* 1. Daily Pledges */}
       <div
-        className={`rounded-2xl p-6 border transition-colors ${
+        className={`rounded-xl p-5 border transition-colors ${
           isDark
-            ? 'bg-[#131B2A] border-[#1F293D] shadow-[0_4px_20px_rgba(0,0,0,0.25)] text-slate-100'
-            : 'bg-white border-slate-200/80 shadow-subtle text-slate-900'
+            ? 'bg-[#191B1F] border-[#282A30] text-[#EDEDEB]'
+            : 'bg-[#FFFFFF] border-[#E8E7E3] text-[#1A1C1E] shadow-subtle'
         }`}
       >
-        <div className="flex items-center justify-between mb-5">
+        <div className="flex items-center justify-between mb-4">
           <div>
-            <div className="flex items-center gap-2 mb-1">
-              <Target className="w-4 h-4 text-indigo-400" />
-              <h3 className={`text-base font-medium tracking-tight ${isDark ? 'text-white' : 'text-slate-900'}`}>
-                Digital Detox Pledges
-              </h3>
+            <div className="flex items-center gap-2">
+              <Target className="w-4 h-4 text-sage-600 dark:text-sage-400" />
+              <h3 className="text-sm font-semibold tracking-tight">Digital Detox Pledges</h3>
             </div>
-            <p className="text-xs text-slate-400">
+            <p className="text-xs text-stone-500 dark:text-stone-400 mt-0.5">
               Personal commitments to screen-free boundaries.
             </p>
           </div>
 
           <button
             onClick={() => setShowAddPledge(!showAddPledge)}
-            className={`flex items-center gap-1 px-3 py-1.5 text-xs font-medium rounded-lg border cursor-pointer transition-all ${
-              isDark
-                ? 'bg-slate-800 hover:bg-slate-700 text-slate-200 border-slate-700'
-                : 'bg-slate-50 hover:bg-slate-100 text-slate-700 border-slate-200'
-            }`}
+            className="flex items-center gap-1 px-2.5 py-1 text-xs font-medium rounded-lg border border-stone-200 dark:border-stone-700 hover:bg-stone-50 dark:hover:bg-stone-800 transition-colors cursor-pointer"
           >
-            <Plus className="w-3.5 h-3.5" /> {showAddPledge ? 'Close' : 'New Pledge'}
+            <Plus className="w-3.5 h-3.5" /> {showAddPledge ? 'Cancel' : 'New'}
           </button>
         </div>
 
         {showAddPledge && (
-          <form onSubmit={handleCreatePledge} className={`mb-4 p-3.5 rounded-xl border space-y-2.5 ${
-            isDark ? 'bg-slate-900/60 border-slate-800' : 'bg-slate-50 border-slate-200'
-          }`}>
+          <form onSubmit={handleCreatePledge} className="mb-3 p-3 rounded-lg border border-stone-200 dark:border-stone-700 space-y-2 bg-[#FAF9F6] dark:bg-[#121316]">
             <input
               type="text"
               placeholder="Commitment (e.g. No screens after 9:30 PM)"
               value={pledgeTitle}
               onChange={e => setPledgeTitle(e.target.value)}
-              className={`w-full px-3 py-2 text-xs rounded-lg outline-none border focus:border-indigo-400 ${
-                isDark ? 'bg-slate-800 border-slate-700 text-white' : 'bg-white border-slate-200 text-slate-800'
+              className={`w-full px-2.5 py-1.5 text-xs rounded-md border outline-none ${
+                isDark ? 'bg-[#191B1F] border-[#282A30] text-white focus:border-sage-500' : 'bg-white border-stone-200 text-stone-900 focus:border-sage-600'
               }`}
               autoFocus
             />
@@ -155,13 +150,13 @@ export const PledgesCard: React.FC<PledgesCardProps> = ({
                 placeholder="Mins"
                 value={pledgeMinutes}
                 onChange={e => setPledgeMinutes(e.target.value)}
-                className={`w-28 px-2.5 py-1.5 text-xs rounded-lg outline-none border ${
-                  isDark ? 'bg-slate-800 border-slate-700 text-white' : 'bg-white border-slate-200 text-slate-800'
+                className={`w-24 px-2.5 py-1.5 text-xs font-mono tabular-nums rounded-md border outline-none ${
+                  isDark ? 'bg-[#191B1F] border-[#282A30] text-white' : 'bg-white border-stone-200 text-stone-900'
                 }`}
               />
               <button
                 type="submit"
-                className="flex-1 py-1.5 bg-indigo-500 hover:bg-indigo-600 text-white text-xs font-medium rounded-lg cursor-pointer transition-all"
+                className="flex-1 py-1.5 bg-sage-600 hover:bg-sage-700 text-white text-xs font-medium rounded-md cursor-pointer transition-colors shadow-subtle"
               >
                 Save Pledge
               </button>
@@ -169,72 +164,62 @@ export const PledgesCard: React.FC<PledgesCardProps> = ({
           </form>
         )}
 
-        <div className="space-y-2.5">
+        <div className="space-y-1.5">
           {pledges.map(p => (
             <div
               key={p.id}
-              className={`flex items-center justify-between p-3 rounded-xl border transition-all ${
-                isDark ? 'bg-slate-900/40 border-slate-800/80' : 'bg-slate-50/50 border-slate-100'
+              className={`flex items-center justify-between p-2.5 rounded-lg border transition-colors ${
+                isDark ? 'bg-[#121316]/50 border-[#282A30]' : 'bg-[#FAF9F6] border-[#EFEFEA]'
               }`}
             >
-              <div className="flex items-center gap-3">
-                <span className="w-2 h-2 rounded-full bg-indigo-400" />
-                <div>
-                  <h4 className={`text-xs font-medium ${isDark ? 'text-slate-200' : 'text-slate-800'}`}>{p.title}</h4>
-                  <p className="text-[10px] text-slate-400">{p.targetMinutes} minutes offline</p>
-                </div>
+              <div className="flex items-center gap-2.5">
+                <span className="w-1.5 h-1.5 rounded-full bg-sage-500" />
+                <h4 className="text-xs font-medium text-stone-800 dark:text-stone-200">{p.title}</h4>
               </div>
+              <span className="font-mono text-[11px] tabular-nums text-stone-400">
+                {p.targetMinutes}m target
+              </span>
             </div>
           ))}
           {pledges.length === 0 && (
-            <p className="text-xs text-slate-400 italic">No pledges active. Add your first digital detox pledge!</p>
+            <p className="text-xs text-stone-400 italic py-2 text-center">No pledges active. Add your first digital detox pledge!</p>
           )}
         </div>
       </div>
 
-      {/* 2. Planned Offline Activities (Integrated with Weather Recommendations) */}
+      {/* 2. Planned Offline Activities */}
       <div
-        className={`rounded-2xl p-6 border transition-colors ${
+        className={`rounded-xl p-5 border transition-colors ${
           isDark
-            ? 'bg-[#131B2A] border-[#1F293D] shadow-[0_4px_20px_rgba(0,0,0,0.25)] text-slate-100'
-            : 'bg-white border-slate-200/80 shadow-subtle text-slate-900'
+            ? 'bg-[#191B1F] border-[#282A30] text-[#EDEDEB]'
+            : 'bg-[#FFFFFF] border-[#E8E7E3] text-[#1A1C1E] shadow-subtle'
         }`}
       >
-        <div className="flex items-center justify-between mb-5">
+        <div className="flex items-center justify-between mb-4">
           <div>
-            <div className="flex items-center gap-2 mb-1">
-              <h3 className={`text-base font-medium tracking-tight ${isDark ? 'text-white' : 'text-slate-900'}`}>
-                Planned Offline Activities
-              </h3>
-            </div>
-            <p className="text-xs text-slate-400">
-              Tangible actions to reclaim your mind and body.
+            <h3 className="text-sm font-semibold tracking-tight">Planned Offline Activities</h3>
+            <p className="text-xs text-stone-500 dark:text-stone-400 mt-0.5">
+              Tangible actions to reclaim your mind and presence.
             </p>
           </div>
 
           <button
             onClick={() => setShowAddAct(!showAddAct)}
-            className={`flex items-center gap-1 px-3 py-1.5 text-xs font-medium rounded-lg border cursor-pointer transition-all ${
-              isDark
-                ? 'bg-slate-800 hover:bg-slate-700 text-slate-200 border-slate-700'
-                : 'bg-slate-50 hover:bg-slate-100 text-slate-700 border-slate-200'
-            }`}
+            className="flex items-center gap-1 px-2.5 py-1 text-xs font-medium rounded-lg border border-stone-200 dark:border-stone-700 hover:bg-stone-50 dark:hover:bg-stone-800 transition-colors cursor-pointer"
           >
-            <Plus className="w-3.5 h-3.5" /> {showAddAct ? 'Close' : 'Add Activity'}
+            <Plus className="w-3.5 h-3.5" /> {showAddAct ? 'Cancel' : 'New'}
           </button>
         </div>
 
         {showAddAct && (
-          <form onSubmit={handleCreateAct} className={`mb-4 p-3.5 rounded-xl border space-y-2.5 ${
-            isDark ? 'bg-slate-900/60 border-slate-800' : 'bg-slate-50 border-slate-200'
-          }`}>
+          <form onSubmit={handleCreateAct} className="mb-3 p-3 rounded-lg border border-stone-200 dark:border-stone-700 space-y-2 bg-[#FAF9F6] dark:bg-[#121316]">
             <input
               type="text"
               placeholder="Activity name (e.g. Evening walk in park)"
               value={actTitle}
               onChange={e => setActTitle(e.target.value)}
-              className={`w-full px-3 py-2 text-xs rounded-lg outline-none border focus:border-indigo-400 ${
-                isDark ? 'bg-slate-800 border-slate-700 text-white' : 'bg-white border-slate-200 text-slate-800'
+              className={`w-full px-2.5 py-1.5 text-xs rounded-md border outline-none ${
+                isDark ? 'bg-[#191B1F] border-[#282A30] text-white focus:border-sage-500' : 'bg-white border-stone-200 text-stone-900 focus:border-sage-600'
               }`}
               autoFocus
             />
@@ -244,13 +229,13 @@ export const PledgesCard: React.FC<PledgesCardProps> = ({
                 placeholder="Mins"
                 value={actMinutes}
                 onChange={e => setActMinutes(e.target.value)}
-                className={`w-28 px-2.5 py-1.5 text-xs rounded-lg outline-none border ${
-                  isDark ? 'bg-slate-800 border-slate-700 text-white' : 'bg-white border-slate-200 text-slate-800'
+                className={`w-24 px-2.5 py-1.5 text-xs font-mono tabular-nums rounded-md border outline-none ${
+                  isDark ? 'bg-[#191B1F] border-[#282A30] text-white' : 'bg-white border-stone-200 text-stone-900'
                 }`}
               />
               <button
                 type="submit"
-                className="flex-1 py-1.5 bg-indigo-500 hover:bg-indigo-600 text-white text-xs font-medium rounded-lg cursor-pointer transition-all"
+                className="flex-1 py-1.5 bg-sage-600 hover:bg-sage-700 text-white text-xs font-medium rounded-md cursor-pointer transition-colors shadow-subtle"
               >
                 Save Activity
               </button>
@@ -258,40 +243,40 @@ export const PledgesCard: React.FC<PledgesCardProps> = ({
           </form>
         )}
 
-        <div className="space-y-2.5 max-h-72 overflow-y-auto pr-1">
+        <div className="space-y-1.5 max-h-72 overflow-y-auto pr-0.5">
           {activities.map(act => (
             <div
               key={act.id}
-              className={`flex items-center justify-between p-3 rounded-xl border transition-all ${
+              className={`flex items-center justify-between p-2.5 rounded-lg border transition-colors ${
                 act.completed
                   ? isDark
-                    ? 'bg-emerald-950/20 border-emerald-900/40 text-slate-500 line-through'
-                    : 'bg-emerald-50/40 border-emerald-100 text-slate-400 line-through'
+                    ? 'bg-sage-950/20 border-sage-900/30 text-stone-500 opacity-60'
+                    : 'bg-sage-50/40 border-sage-100 text-stone-400 opacity-70'
                   : isDark
-                  ? 'bg-slate-900/60 border-slate-800 hover:border-slate-700 shadow-sm'
-                  : 'bg-white border-slate-200/80 hover:border-slate-300 shadow-sm'
+                  ? 'bg-[#121316]/50 border-[#282A30]'
+                  : 'bg-[#FAF9F6] border-[#EFEFEA]'
               }`}
             >
-              <div className="flex items-center gap-3 min-w-0">
+              <div className="flex items-center gap-2.5 min-w-0">
                 <button
                   onClick={() => onCompleteActivity(act.id)}
-                  title={act.completed ? 'Mark Incomplete' : 'Click to Mark Complete'}
-                  className="cursor-pointer"
+                  title={act.completed ? 'Mark Incomplete' : 'Mark Complete'}
+                  className="cursor-pointer text-sage-600 hover:text-sage-700 transition-colors"
                 >
                   {act.completed ? (
-                    <CheckCircle className="w-4 h-4 text-emerald-500" />
+                    <CheckCircle className="w-4 h-4 text-sage-600" />
                   ) : (
-                    <Circle className="w-4 h-4 text-slate-400 hover:text-emerald-500 transition-colors" />
+                    <Circle className="w-4 h-4 text-stone-300 hover:text-sage-600" />
                   )}
                 </button>
                 <div className="min-w-0">
-                  <h4 className={`text-xs font-medium truncate ${isDark ? 'text-slate-200' : 'text-slate-800'}`}>
+                  <h4 className={`text-xs font-medium truncate ${act.completed ? 'line-through' : ''}`}>
                     {act.title}
                   </h4>
-                  <div className="flex items-center gap-2 mt-0.5 text-[10px] text-slate-400">
-                    <span>{act.durationMinutes}m duration</span>
+                  <div className="flex items-center gap-2 font-mono text-[10px] tabular-nums text-stone-400">
+                    <span>{act.durationMinutes}m offline</span>
                     {act.weatherRecommended && (
-                      <span className="text-indigo-400 flex items-center gap-0.5 font-medium">
+                      <span className="text-sage-600 dark:text-sage-400 flex items-center gap-0.5">
                         <Sparkles className="w-2.5 h-2.5" /> Weather Match
                       </span>
                     )}
@@ -301,8 +286,8 @@ export const PledgesCard: React.FC<PledgesCardProps> = ({
             </div>
           ))}
           {activities.length === 0 && (
-            <p className="text-xs text-slate-400 italic">
-              No planned activities. Click "+ Plan Activity" on any weather suggestion above!
+            <p className="text-xs text-stone-400 italic py-2 text-center">
+              No planned activities. Click "+ Plan Activity" under Weather & Discover!
             </p>
           )}
         </div>

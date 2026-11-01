@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { ExternalLink, Sparkles, Moon, Sun, Monitor } from 'lucide-react';
+import { ExternalLink, Sparkles, Moon, Sun, Monitor, Shield } from 'lucide-react';
 import { OfflineStorageSchema, RestrictedSite, ActivityRecommendation } from '../types';
 import { getStorageData } from '../storage';
 import { sendExtensionMessage, subscribeToStorage } from '../services/bridge';
@@ -33,7 +33,6 @@ export const Popup: React.FC = () => {
     getStorageData().then(d => {
       setData(d);
       setLoading(false);
-      // Auto-refresh weather if missing
       if (!d.weather) {
         sendExtensionMessage({ type: 'REFRESH_WEATHER' }).then(setData).catch(() => {});
       }
@@ -100,12 +99,8 @@ export const Popup: React.FC = () => {
     setData(updated);
   };
 
-  const handleAddSite = async (domain: string, category?: RestrictedSite['category']) => {
-    const updated = await sendExtensionMessage({
-      type: 'ADD_SITE',
-      domain,
-      category,
-    });
+  const handleAddSite = async (domain: string) => {
+    const updated = await sendExtensionMessage({ type: 'ADD_SITE', domain });
     setData(updated);
   };
 
@@ -147,11 +142,11 @@ export const Popup: React.FC = () => {
     return (
       <div
         className={`w-[380px] h-[450px] flex items-center justify-center p-6 text-xs ${
-          isDarkMode ? 'bg-[#0B0F19] text-slate-400' : 'bg-offline-bg text-slate-400'
+          isDarkMode ? 'bg-[#121316] text-stone-400' : 'bg-[#FAF9F6] text-stone-400'
         }`}
       >
         <div className="flex items-center gap-2">
-          <div className="w-5 h-5 rounded-lg bg-indigo-500 animate-spin" />
+          <div className="w-4 h-4 rounded-full border-2 border-sage-500 border-t-transparent animate-spin" />
           <span>Opening tabzero...</span>
         </div>
       </div>
@@ -173,47 +168,49 @@ export const Popup: React.FC = () => {
 
   return (
     <div
-      className={`w-[380px] max-w-full p-4 space-y-3 font-sans transition-colors duration-300 ${
+      className={`w-[380px] max-w-full p-4 space-y-3 font-sans transition-colors duration-200 ${
         isDarkMode
-          ? 'bg-[#0B0F19] text-slate-100'
-          : 'bg-[#F8FAFC] text-slate-900'
+          ? 'bg-[#121316] text-[#EDEDEB]'
+          : 'bg-[#FAF9F6] text-[#1A1C1E]'
       }`}
     >
       {/* Header */}
       <div
-        className={`flex items-center justify-between pb-2 border-b transition-colors ${
-          isDarkMode ? 'border-[#1F293D]' : 'border-slate-200/80'
+        className={`flex items-center justify-between pb-2.5 border-b transition-colors ${
+          isDarkMode ? 'border-[#282A30]' : 'border-[#E8E7E3]'
         }`}
       >
-        <div className="flex items-center gap-2">
+        <div className="flex items-center gap-2.5">
           <img
             src="icons/icon48.png"
             alt="tabzero logo"
-            className="w-6 h-6 rounded-full object-cover shadow-sm ring-1 ring-black/5 dark:ring-white/10"
+            className="w-6 h-6 rounded-full object-cover shadow-subtle ring-1 ring-black/5 dark:ring-white/10"
           />
           <div>
-            <h2 className="text-xs font-bold tracking-tight">tabzero.</h2>
-            <p className={`text-[10px] ${isDarkMode ? 'text-slate-400' : 'text-slate-400'}`}>
+            <h2 className="text-xs font-semibold tracking-tight text-stone-900 dark:text-stone-100 flex items-center gap-1">
+              tabzero<span className="text-sage-600 dark:text-sage-400">.</span>
+            </h2>
+            <p className="text-[10px] text-stone-400">
               Digital Detox
             </p>
           </div>
         </div>
 
         <div className="flex items-center gap-1.5">
-          {/* Universal Theme Mode Toggle */}
+          {/* Theme Mode Toggle */}
           <button
             onClick={handleToggleTheme}
-            title={`Current Theme: ${themePref.toUpperCase()} (Click to change mode across all pages)`}
-            className={`p-1.5 rounded-lg border shadow-subtle transition-all cursor-pointer flex items-center gap-1 ${
+            title={`Current Theme: ${themePref.toUpperCase()} (Click to change mode)`}
+            className={`p-1.5 rounded-lg border shadow-subtle transition-colors cursor-pointer ${
               isDarkMode
-                ? 'text-amber-300 bg-[#131B2A] border-[#1F293D] hover:bg-[#1C273C]'
-                : 'text-indigo-600 bg-white border-slate-200 hover:bg-slate-100'
+                ? 'text-stone-300 bg-[#191B1F] border-[#282A30] hover:text-white'
+                : 'text-stone-600 bg-white border-[#E8E7E3] hover:text-stone-900'
             }`}
           >
             {themePref === 'dark' ? (
-              <Moon className="w-3.5 h-3.5 fill-current" />
+              <Moon className="w-3.5 h-3.5" />
             ) : themePref === 'light' ? (
-              <Sun className="w-3.5 h-3.5 fill-current" />
+              <Sun className="w-3.5 h-3.5" />
             ) : (
               <Monitor className="w-3.5 h-3.5" />
             )}
@@ -224,15 +221,16 @@ export const Popup: React.FC = () => {
             onUndo={handleUndo}
             onRedo={handleRedo}
             compact={true}
+            isDark={isDarkMode}
           />
 
           <button
             onClick={handleOpenDashboard}
             title="Open Full Dashboard in Tab"
-            className={`p-1.5 rounded-lg border shadow-subtle transition-all cursor-pointer ${
+            className={`p-1.5 rounded-lg border shadow-subtle transition-colors cursor-pointer ${
               isDarkMode
-                ? 'text-slate-300 hover:text-white bg-[#131B2A] border-[#1F293D] hover:bg-[#1C273C]'
-                : 'text-slate-500 hover:text-slate-900 bg-white border-slate-200 hover:bg-slate-100'
+                ? 'text-stone-300 hover:text-white bg-[#191B1F] border-[#282A30]'
+                : 'text-stone-600 hover:text-stone-900 bg-white border-[#E8E7E3]'
             }`}
           >
             <ExternalLink className="w-3.5 h-3.5" />
@@ -244,29 +242,21 @@ export const Popup: React.FC = () => {
       <div
         className={`p-3 rounded-xl border transition-colors ${
           isDarkMode
-            ? 'bg-[#131B2A] border-[#1F293D] shadow-[0_4px_20px_rgba(0,0,0,0.25)]'
-            : 'bg-white border-slate-200/80 shadow-subtle'
+            ? 'bg-[#191B1F] border-[#282A30] text-[#EDEDEB]'
+            : 'bg-[#FFFFFF] border-[#E8E7E3] text-[#1A1C1E] shadow-subtle'
         }`}
       >
         <div className="flex items-center justify-between text-xs mb-1.5">
-          <span
-            className={`font-medium flex items-center gap-1 ${
-              isDarkMode ? 'text-slate-300' : 'text-slate-600'
-            }`}
-          >
-            <Sparkles className="w-3 h-3 text-indigo-400" /> Today's Offline Space
+          <span className="font-medium text-stone-500 dark:text-stone-400">
+            Today's Offline Mindspace
           </span>
-          <span className="font-semibold">
-            {totalOfflineMins} / {goalMins}m
+          <span className="font-mono text-xs tabular-nums font-semibold">
+            {totalOfflineMins} / {goalMins}m <span className="text-sage-600 dark:text-sage-400 font-normal">({progressPct}%)</span>
           </span>
         </div>
-        <div
-          className={`w-full rounded-full h-1.5 overflow-hidden ${
-            isDarkMode ? 'bg-slate-800' : 'bg-slate-100'
-          }`}
-        >
+        <div className="w-full rounded-full h-1 bg-stone-100 dark:bg-stone-800 overflow-hidden">
           <div
-            className="bg-indigo-400 h-1.5 rounded-full transition-all duration-500"
+            className="bg-sage-600 h-full transition-all duration-500"
             style={{ width: `${progressPct}%` }}
           />
         </div>
@@ -306,10 +296,10 @@ export const Popup: React.FC = () => {
       {/* Footer link to Dashboard */}
       <button
         onClick={handleOpenDashboard}
-        className={`w-full py-2 text-xs font-medium rounded-xl transition-all flex items-center justify-center gap-1.5 cursor-pointer border ${
+        className={`w-full py-2 text-xs font-medium rounded-lg transition-colors flex items-center justify-center gap-1.5 cursor-pointer border ${
           isDarkMode
-            ? 'bg-[#131B2A] hover:bg-[#1C273C] text-slate-300 border-[#1F293D]'
-            : 'bg-slate-100 hover:bg-slate-200 text-slate-700 border-slate-200'
+            ? 'bg-[#191B1F] hover:bg-[#23262C] text-stone-300 border-[#282A30]'
+            : 'bg-white hover:bg-[#F2F1ED] text-stone-700 border-[#E8E7E3] shadow-subtle'
         }`}
       >
         <span>Open Full Wellness Dashboard</span>

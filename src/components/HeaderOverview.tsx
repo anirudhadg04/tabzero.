@@ -58,45 +58,42 @@ export const HeaderOverview: React.FC<HeaderOverviewProps> = ({
   };
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-5">
       {/* Top Bar */}
-      <header className={`flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-4 border-b ${
-        isDark ? 'border-[#1F293D]' : 'border-slate-200/80'
-      }`}>
-        <div>
-          <div className="flex items-center gap-3">
-            <img
-              src="icons/icon48.png"
-              alt="tabzero logo"
-              className="w-8 h-8 rounded-full object-cover shadow-sm ring-1 ring-black/5 dark:ring-white/10"
-            />
-            <div>
-              <h1 className={`text-xl font-bold tracking-tight flex items-center gap-2 ${
-                isDark ? 'text-white' : 'text-slate-950'
-              }`}>
-                tabzero.
-              </h1>
-              <p className="text-xs text-slate-400">
-                Life happens beyond the screen. Scroll less. Live more.
-              </p>
-            </div>
+      <header
+        className={`flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-4 border-b transition-colors ${
+          isDark ? 'border-[#282A30]' : 'border-[#E8E7E3]'
+        }`}
+      >
+        <div className="flex items-center gap-3">
+          <img
+            src="icons/icon48.png"
+            alt="tabzero logo"
+            className="w-8 h-8 rounded-full object-cover shadow-subtle ring-1 ring-black/5 dark:ring-white/10"
+          />
+          <div>
+            <h1 className="text-lg font-semibold tracking-tight text-stone-900 dark:text-stone-100 flex items-center gap-1.5">
+              tabzero<span className="text-sage-600 dark:text-sage-400">.</span>
+            </h1>
+            <p className="text-xs text-stone-500 dark:text-stone-400">
+              Life happens beyond the screen.
+            </p>
           </div>
         </div>
 
-        <div className="flex items-center gap-3">
+        <div className="flex items-center gap-2">
           <HistoryControls
             history={data.history}
             onUndo={onUndo}
             onRedo={onRedo}
             compact={!isDashboard}
+            isDark={isDark}
           />
 
           {!isDashboard && onOpenDashboard && (
             <button
               onClick={onOpenDashboard}
-              className={`px-3 py-1.5 text-xs font-medium rounded-xl transition-all shadow-subtle cursor-pointer ${
-                isDark ? 'bg-slate-800 hover:bg-slate-700 text-white' : 'bg-slate-900 hover:bg-slate-800 text-white'
-              }`}
+              className="px-3 py-1.5 text-xs font-medium rounded-lg bg-stone-900 hover:bg-stone-800 dark:bg-stone-100 dark:hover:bg-white text-white dark:text-stone-900 transition-colors shadow-subtle cursor-pointer"
             >
               Open Dashboard
             </button>
@@ -104,138 +101,104 @@ export const HeaderOverview: React.FC<HeaderOverviewProps> = ({
         </div>
       </header>
 
-      {/* Overview Metric Cards */}
-      <div className="grid grid-cols-2 md:grid-cols-4 gap-3.5">
-        {/* Metric 1: Offline Time */}
-        <div className={`p-4 sm:p-5 rounded-2xl border transition-colors ${
+      {/* Unified Metric Bar */}
+      <div
+        className={`rounded-xl border transition-colors grid grid-cols-2 md:grid-cols-4 divide-y md:divide-y-0 md:divide-x ${
           isDark
-            ? 'bg-[#131B2A] border-[#1F293D] shadow-[0_4px_20px_rgba(0,0,0,0.25)]'
-            : 'bg-white border-slate-200/80 shadow-subtle'
-        }`}>
-          <div className="flex items-center justify-between text-slate-400 mb-2">
-            <span className="text-[11px] font-medium uppercase tracking-wider">Offline Mindspace</span>
-            <Sparkles className="w-4 h-4 text-indigo-400" />
-          </div>
+            ? 'bg-[#191B1F] border-[#282A30] divide-[#282A30] text-[#EDEDEB]'
+            : 'bg-[#FFFFFF] border-[#E8E7E3] divide-[#E8E7E3] text-[#1A1C1E] shadow-subtle'
+        }`}
+      >
+        {/* Metric 1: Offline Time */}
+        <div className="p-4 sm:p-5">
+          <span className="text-[10px] font-medium uppercase tracking-wider text-stone-500 dark:text-stone-400 block mb-1">
+            Offline Mindspace
+          </span>
           <div className="flex items-baseline gap-1.5">
-            <span className={`text-2xl sm:text-3xl font-light font-mono ${
-              isDark ? 'text-white' : 'text-slate-900'
-            }`}>
+            <span className="text-2xl sm:text-3xl font-mono tabular-nums font-light">
               {totalOfflineMins}
             </span>
-            <span className="text-xs text-slate-400 font-medium">mins today</span>
+            <span className="text-xs text-stone-400">mins today</span>
           </div>
-          <div className="mt-2.5 flex items-center justify-between text-[11px] text-slate-400">
-            <span>Goal: {goalMins}m</span>
-            <span className="font-semibold text-indigo-400">{progressPct}%</span>
-          </div>
+          <p className="font-mono text-[11px] tabular-nums text-stone-400 mt-1">
+            Goal: {goalMins}m · <span className="text-sage-600 dark:text-sage-400 font-medium">{progressPct}%</span>
+          </p>
         </div>
 
         {/* Metric 2: Browsing Time */}
-        <div className={`p-4 sm:p-5 rounded-2xl border transition-colors ${
-          isDark
-            ? 'bg-[#131B2A] border-[#1F293D] shadow-[0_4px_20px_rgba(0,0,0,0.25)]'
-            : 'bg-white border-slate-200/80 shadow-subtle'
-        }`}>
-          <div className="flex items-center justify-between text-slate-400 mb-2">
-            <span className="text-[11px] font-medium uppercase tracking-wider">Active Browsing</span>
-            <Clock className="w-4 h-4 text-slate-400" />
-          </div>
+        <div className="p-4 sm:p-5">
+          <span className="text-[10px] font-medium uppercase tracking-wider text-stone-500 dark:text-stone-400 block mb-1">
+            Active Browsing
+          </span>
           <div className="flex items-baseline gap-1.5">
-            <span className={`text-2xl sm:text-3xl font-light font-mono ${
-              isDark ? 'text-white' : 'text-slate-900'
-            }`}>
+            <span className="text-2xl sm:text-3xl font-mono tabular-nums font-light">
               {formatDuration(browsingSeconds)}
             </span>
-            <span className="text-xs text-slate-400 font-medium">tracked</span>
           </div>
-          <p className="text-[11px] text-slate-400 mt-2.5 truncate">
-            {todayStr}
-          </p>
+          <p className="text-[11px] text-stone-400 mt-1">{todayStr}</p>
         </div>
 
-        {/* Metric 3: Distractions Deflected */}
-        <div className={`p-4 sm:p-5 rounded-2xl border transition-colors ${
-          isDark
-            ? 'bg-[#131B2A] border-[#1F293D] shadow-[0_4px_20px_rgba(0,0,0,0.25)]'
-            : 'bg-white border-slate-200/80 shadow-subtle'
-        }`}>
-          <div className="flex items-center justify-between text-slate-400 mb-2">
-            <span className="text-[11px] font-medium uppercase tracking-wider">Deflections</span>
-            <Shield className="w-4 h-4 text-emerald-500" />
-          </div>
+        {/* Metric 3: Deflections */}
+        <div className="p-4 sm:p-5">
+          <span className="text-[10px] font-medium uppercase tracking-wider text-stone-500 dark:text-stone-400 block mb-1">
+            Deflections
+          </span>
           <div className="flex items-baseline gap-1.5">
-            <span className={`text-2xl sm:text-3xl font-light font-mono ${
-              isDark ? 'text-white' : 'text-slate-900'
-            }`}>
+            <span className="text-2xl sm:text-3xl font-mono tabular-nums font-light">
               {data.history.present.blockedAttemptsTotal}
             </span>
-            <span className="text-xs text-slate-400 font-medium">distractions stopped</span>
+            <span className="text-xs text-stone-400">distractions stopped</span>
           </div>
-          <p className="text-[11px] text-emerald-500 font-medium mt-2.5">
-            Shield protection active
-          </p>
+          <p className="text-[11px] text-sage-600 dark:text-sage-400 mt-1">Shield active</p>
         </div>
 
-        {/* Metric 4: Daily Goal Setting */}
-        <div className={`p-4 sm:p-5 rounded-2xl border transition-colors ${
-          isDark
-            ? 'bg-[#131B2A] border-[#1F293D] shadow-[0_4px_20px_rgba(0,0,0,0.25)]'
-            : 'bg-white border-slate-200/80 shadow-subtle'
-        }`}>
-          <div className="flex items-center justify-between text-slate-400 mb-2">
-            <span className="text-[11px] font-medium uppercase tracking-wider">Daily Goal</span>
+        {/* Metric 4: Daily Goal */}
+        <div className="p-4 sm:p-5">
+          <div className="flex items-center justify-between text-stone-500 dark:text-stone-400 mb-1">
+            <span className="text-[10px] font-medium uppercase tracking-wider">Daily Goal</span>
             <button
               onClick={() => setEditingGoal(!editingGoal)}
-              className="text-slate-400 hover:text-slate-300 p-0.5 rounded cursor-pointer"
-              title="Edit daily goal"
+              className="p-0.5 hover:text-stone-800 dark:hover:text-stone-200 transition-colors cursor-pointer"
+              title="Edit goal"
             >
-              <Edit3 className="w-3.5 h-3.5" />
+              <Edit3 className="w-3 h-3" />
             </button>
           </div>
 
           {editingGoal ? (
-            <form onSubmit={handleSaveGoal} className="flex items-center gap-1.5">
+            <form onSubmit={handleSaveGoal} className="flex items-center gap-1.5 mt-1">
               <input
                 type="number"
                 min="10"
-                max="600"
+                max="480"
                 value={goalInput}
                 onChange={e => setGoalInput(e.target.value)}
-                className={`w-16 px-2 py-1 text-sm rounded-lg outline-none border ${
-                  isDark
-                    ? 'bg-slate-800 border-slate-700 text-white'
-                    : 'bg-white border-slate-300 text-slate-900'
-                }`}
+                className="w-16 px-1.5 py-0.5 font-mono text-xs tabular-nums rounded border outline-none bg-stone-50 dark:bg-stone-800 border-stone-300 dark:border-stone-700"
                 autoFocus
               />
               <button
                 type="submit"
-                className={`p-1 rounded-lg cursor-pointer ${
-                  isDark ? 'bg-white text-slate-950' : 'bg-slate-900 text-white'
-                }`}
+                className="p-1 rounded bg-sage-600 text-white cursor-pointer"
               >
-                <Check className="w-3.5 h-3.5" />
+                <Check className="w-3 h-3" />
               </button>
             </form>
           ) : (
-            <div className="flex items-baseline gap-1.5">
-              <span className={`text-2xl sm:text-3xl font-light font-mono ${
-                isDark ? 'text-white' : 'text-slate-900'
-              }`}>
-                {goalMins}
-              </span>
-              <span className="text-xs text-slate-400 font-medium">mins/day</span>
-            </div>
+            <>
+              <div className="flex items-baseline gap-1.5">
+                <span className="text-2xl sm:text-3xl font-mono tabular-nums font-light">
+                  {goalMins}
+                </span>
+                <span className="text-xs text-stone-400">mins/day</span>
+              </div>
+              <div className="w-full bg-stone-100 dark:bg-stone-800 rounded-full h-1 mt-2.5 overflow-hidden">
+                <div
+                  className="bg-sage-600 h-full transition-all duration-500"
+                  style={{ width: `${progressPct}%` }}
+                />
+              </div>
+            </>
           )}
-
-          <div className={`w-full rounded-full h-1.5 mt-3 overflow-hidden ${
-            isDark ? 'bg-slate-800' : 'bg-slate-100'
-          }`}>
-            <div
-              className="bg-indigo-500 h-1.5 rounded-full transition-all duration-500"
-              style={{ width: `${progressPct}%` }}
-            />
-          </div>
         </div>
       </div>
     </div>

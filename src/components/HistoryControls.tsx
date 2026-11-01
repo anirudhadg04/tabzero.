@@ -7,6 +7,7 @@ interface HistoryControlsProps {
   onUndo: () => void;
   onRedo: () => void;
   compact?: boolean;
+  isDark?: boolean;
 }
 
 export const HistoryControls: React.FC<HistoryControlsProps> = ({
@@ -14,6 +15,7 @@ export const HistoryControls: React.FC<HistoryControlsProps> = ({
   onUndo,
   onRedo,
   compact = false,
+  isDark = false,
 }) => {
   const undoCount = history.past.length;
   const redoCount = history.future.length;
@@ -22,57 +24,71 @@ export const HistoryControls: React.FC<HistoryControlsProps> = ({
 
   if (compact) {
     return (
-      <div className="flex items-center gap-1.5 bg-slate-100/80 p-1 rounded-lg border border-slate-200/60">
+      <div
+        className={`flex items-center gap-1 p-0.5 rounded-lg border transition-colors ${
+          isDark
+            ? 'bg-[#191B1F] border-[#282A30]'
+            : 'bg-[#F2F1ED] border-[#E5E4DF]'
+        }`}
+      >
         <button
           onClick={onUndo}
           disabled={!canUndo}
           title={`Undo last action (${undoCount}/5 available)`}
-          className={`flex items-center gap-1 px-2 py-1 rounded text-xs font-medium transition-all ${
+          className={`flex items-center gap-1 px-1.5 py-1 rounded text-xs transition-colors cursor-pointer ${
             canUndo
-              ? 'bg-white text-slate-800 shadow-sm hover:bg-slate-50 cursor-pointer'
-              : 'text-slate-400 cursor-not-allowed opacity-50'
+              ? isDark
+                ? 'text-[#EDEDEB] hover:bg-[#23262C]'
+                : 'text-[#1A1C1E] hover:bg-[#FFFFFF] shadow-subtle'
+              : 'text-stone-400 opacity-40 cursor-not-allowed'
           }`}
         >
-          <RotateCcw className="w-3.5 h-3.5" />
-          <span>{undoCount}</span>
+          <RotateCcw className="w-3 h-3" />
+          <span className="font-mono text-[10px] tabular-nums">{undoCount}</span>
         </button>
 
         <button
           onClick={onRedo}
           disabled={!canRedo}
           title={`Redo action (${redoCount}/5 available)`}
-          className={`flex items-center gap-1 px-2 py-1 rounded text-xs font-medium transition-all ${
+          className={`flex items-center gap-1 px-1.5 py-1 rounded text-xs transition-colors cursor-pointer ${
             canRedo
-              ? 'bg-white text-slate-800 shadow-sm hover:bg-slate-50 cursor-pointer'
-              : 'text-slate-400 cursor-not-allowed opacity-50'
+              ? isDark
+                ? 'text-[#EDEDEB] hover:bg-[#23262C]'
+                : 'text-[#1A1C1E] hover:bg-[#FFFFFF] shadow-subtle'
+              : 'text-stone-400 opacity-40 cursor-not-allowed'
           }`}
         >
-          <RotateCw className="w-3.5 h-3.5" />
-          <span>{redoCount}</span>
+          <RotateCw className="w-3 h-3" />
+          <span className="font-mono text-[10px] tabular-nums">{redoCount}</span>
         </button>
       </div>
     );
   }
 
   return (
-    <div className="flex items-center gap-3 bg-white px-3.5 py-2 rounded-xl border border-slate-200/80 shadow-subtle">
-      <div className="flex items-center gap-1.5">
+    <div
+      className={`flex items-center gap-2.5 px-3 py-1.5 rounded-lg border text-xs transition-colors ${
+        isDark
+          ? 'bg-[#191B1F] border-[#282A30] text-[#EDEDEB]'
+          : 'bg-[#FFFFFF] border-[#E8E7E3] text-[#1A1C1E] shadow-subtle'
+      }`}
+    >
+      <div className="flex items-center gap-1">
         <button
           onClick={onUndo}
           disabled={!canUndo}
-          className={`flex items-center gap-2 px-3 py-1.5 rounded-lg text-xs font-medium transition-all ${
+          className={`flex items-center gap-1.5 px-2 py-1 rounded transition-colors ${
             canUndo
-              ? 'bg-slate-100 text-slate-800 hover:bg-slate-200 cursor-pointer active:scale-95'
-              : 'bg-slate-50 text-slate-300 cursor-not-allowed'
+              ? isDark
+                ? 'bg-[#23262C] hover:bg-[#2E3138] text-[#EDEDEB] cursor-pointer'
+                : 'bg-[#F4F3EF] hover:bg-[#EAE8E2] text-[#1A1C1E] cursor-pointer'
+              : 'text-stone-400 opacity-40 cursor-not-allowed'
           }`}
         >
-          <RotateCcw className="w-3.5 h-3.5" />
+          <RotateCcw className="w-3 h-3" />
           <span>Undo</span>
-          <span
-            className={`px-1.5 py-0.2 rounded text-[10px] font-semibold ${
-              canUndo ? 'bg-indigo-100 text-indigo-700' : 'bg-slate-200/50 text-slate-400'
-            }`}
-          >
+          <span className="font-mono text-[10px] tabular-nums opacity-70">
             {undoCount}/5
           </span>
         </button>
@@ -80,27 +96,25 @@ export const HistoryControls: React.FC<HistoryControlsProps> = ({
         <button
           onClick={onRedo}
           disabled={!canRedo}
-          className={`flex items-center gap-2 px-3 py-1.5 rounded-lg text-xs font-medium transition-all ${
+          className={`flex items-center gap-1.5 px-2 py-1 rounded transition-colors ${
             canRedo
-              ? 'bg-slate-100 text-slate-800 hover:bg-slate-200 cursor-pointer active:scale-95'
-              : 'bg-slate-50 text-slate-300 cursor-not-allowed'
+              ? isDark
+                ? 'bg-[#23262C] hover:bg-[#2E3138] text-[#EDEDEB] cursor-pointer'
+                : 'bg-[#F4F3EF] hover:bg-[#EAE8E2] text-[#1A1C1E] cursor-pointer'
+              : 'text-stone-400 opacity-40 cursor-not-allowed'
           }`}
         >
-          <RotateCw className="w-3.5 h-3.5" />
+          <RotateCw className="w-3 h-3" />
           <span>Redo</span>
-          <span
-            className={`px-1.5 py-0.2 rounded text-[10px] font-semibold ${
-              canRedo ? 'bg-indigo-100 text-indigo-700' : 'bg-slate-200/50 text-slate-400'
-            }`}
-          >
+          <span className="font-mono text-[10px] tabular-nums opacity-70">
             {redoCount}/5
           </span>
         </button>
       </div>
 
-      <div className="hidden sm:flex items-center gap-1 border-l border-slate-200 pl-3">
-        <span className="text-[11px] text-slate-400">5-step reversible memory</span>
-      </div>
+      <span className="hidden sm:inline-block font-mono text-[11px] text-stone-400 border-l border-stone-200 dark:border-stone-700/60 pl-2">
+        5-step undo
+      </span>
     </div>
   );
 };

@@ -17,11 +17,7 @@ import { INITIAL_STORAGE } from '../storage/defaults';
 import {
   Sparkles,
   Shield,
-  ShieldAlert,
   Clock,
-  Compass,
-  CheckCircle2,
-  XCircle,
   Play,
   Pause,
   Power,
@@ -39,15 +35,19 @@ import {
   Trash2,
   ChevronRight,
   TrendingUp,
-  Layers,
-  Heart,
   Home,
   Target,
   BarChart2,
   Check,
+  CheckCircle,
+  Circle,
   Calendar,
   CloudSun,
+  Droplets,
+  Wind,
+  Compass,
   ArrowUpRight,
+  User,
 } from 'lucide-react';
 
 const PRESET_DURATIONS = [
@@ -66,9 +66,8 @@ export const Dashboard: React.FC = () => {
   // Input states for session timer
   const [customHours, setCustomHours] = useState(0);
   const [customMinutes, setCustomMinutes] = useState(30);
-  const [customSeconds, setCustomSeconds] = useState(0);
 
-  // Input state for restricted sites (no categories)
+  // Input state for restricted sites
   const [newDomain, setNewDomain] = useState('');
 
   // Input states for pledges
@@ -76,7 +75,7 @@ export const Dashboard: React.FC = () => {
   const [pledgeTargetMins, setPledgeTargetMins] = useState(30);
   const [showPledgeForm, setShowPledgeForm] = useState(false);
 
-  // Input states for user-entered planned activities (purely user-entered)
+  // Input states for user-entered planned activities
   const [activityTitle, setActivityTitle] = useState('');
   const [activityDuration, setActivityDuration] = useState(30);
   const [showActivityForm, setShowActivityForm] = useState(false);
@@ -270,7 +269,6 @@ export const Dashboard: React.FC = () => {
     setShowActivityForm(false);
   };
 
-  // Untick or tick activity seamlessly (toggles status)
   const handleCompleteActivity = async (id: string) => {
     const updated = await sendExtensionMessage({ type: 'COMPLETE_ACTIVITY', id });
     setData(updated);
@@ -297,16 +295,16 @@ export const Dashboard: React.FC = () => {
   if (loading) {
     return (
       <div className={`min-h-screen flex items-center justify-center ${
-        isDarkMode ? 'bg-[#0B0F19]' : 'bg-[#F9FAFB]'
+        isDarkMode ? 'bg-[#121316]' : 'bg-[#FAF9F6]'
       }`}>
         <div className="flex flex-col items-center gap-3">
           <img
             src="icons/icon128.png"
             alt="tabzero logo"
-            className="w-12 h-12 rounded-full object-cover shadow-lg animate-pulse"
+            className="w-10 h-10 rounded-full object-cover"
           />
-          <span className="text-xs text-slate-400 font-medium tracking-wide">
-            Entering tabzero. sanctuary...
+          <span className="text-xs text-stone-400 font-medium tracking-wide">
+            Entering tabzero...
           </span>
         </div>
       </div>
@@ -315,7 +313,7 @@ export const Dashboard: React.FC = () => {
 
   const { present } = data.history;
 
-  // Real data calculations
+  // Real calculations
   const greetingHour = new Date().getHours();
   const greetingText = greetingHour < 12 ? 'Good morning' : greetingHour < 17 ? 'Good afternoon' : 'Good evening';
 
@@ -325,11 +323,11 @@ export const Dashboard: React.FC = () => {
     day: 'numeric',
   }).format(new Date());
 
-  // Browsing Time (pure domain-based, zero categories)
+  // Browsing Time
   const domainUsageList = Object.values(data.usage || {}).sort((a, b) => b.timeSpentSeconds - a.timeSpentSeconds);
   const totalBrowsingSeconds = domainUsageList.reduce((sum, d) => sum + d.timeSpentSeconds, 0);
 
-  // User planned activities: filter out any legacy pre-seeded default items (act_1, act_2, act_3) so it is purely user-entered
+  // User planned activities: filter out legacy seeds
   const userActivities = (present.activities || []).filter(
     a => a.id !== 'act_1' && a.id !== 'act_2' && a.id !== 'act_3'
   );
@@ -352,25 +350,11 @@ export const Dashboard: React.FC = () => {
   const goalMins = present.dailyGoalMinutes || 60;
   const goalProgressPct = Math.min(100, Math.round((totalOfflineMins / goalMins) * 100));
 
-  // Balance ratio
-  const totalTimeTrackedSeconds = totalBrowsingSeconds + totalOfflineMins * 60;
-  const presenceRatio = totalTimeTrackedSeconds > 0
-    ? Math.round(((totalOfflineMins * 60) / totalTimeTrackedSeconds) * 100)
-    : 100;
-
-  // Screen time share by domain (purely user domain & time, no categories)
-  const topDomainShares = domainUsageList.slice(0, 5).map(item => {
-    const pct = totalBrowsingSeconds > 0
-      ? Math.round((item.timeSpentSeconds / totalBrowsingSeconds) * 100)
-      : 0;
-    return { ...item, pct };
-  });
-
   // Weather formatting
   const formattedWeather = formatWeather(data.weather);
   const recommendations = generateRecommendations(data.weather);
 
-  // Weekly analytics data (7 days: Mon to Sun)
+  // Weekly analytics data (7 days)
   const currentDayIndex = new Date().getDay();
   const daysOfWeek = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
   const weeklyChartData = daysOfWeek.map((day, idx) => {
@@ -380,681 +364,519 @@ export const Dashboard: React.FC = () => {
     return { day, browsingMins, offlineMins, isToday };
   });
 
-  // Achievements
   const unlockedAchievements = data.achievements.filter(a => a.unlocked);
 
   const getAchievementIcon = (id: string) => {
     switch (id) {
-      case 'first_disconnect': return <Zap className="w-4 h-4" />;
-      case 'reset_30': return <Clock className="w-4 h-4" />;
-      case 'one_hour_free': return <ShieldCheck className="w-4 h-4" />;
-      case 'deep_focus': return <Flame className="w-4 h-4" />;
-      case 'scroll_breaker': return <Ban className="w-4 h-4" />;
-      default: return <Award className="w-4 h-4" />;
+      case 'first_disconnect': return <Zap className="w-3.5 h-3.5" />;
+      case 'reset_30': return <Clock className="w-3.5 h-3.5" />;
+      case 'one_hour_free': return <ShieldCheck className="w-3.5 h-3.5" />;
+      case 'deep_focus': return <Flame className="w-3.5 h-3.5" />;
+      case 'scroll_breaker': return <Ban className="w-3.5 h-3.5" />;
+      default: return <Award className="w-3.5 h-3.5" />;
     }
   };
 
   return (
     <div
-      className={`min-h-screen pb-28 antialiased transition-colors duration-300 ${
+      className={`min-h-screen pb-28 antialiased transition-colors duration-200 ${
         isDarkMode
-          ? 'bg-[#0B0F19] text-slate-100 selection:bg-indigo-900/60 selection:text-white'
-          : 'bg-[#F9FAFB] text-slate-800 selection:bg-indigo-100 selection:text-indigo-900'
+          ? 'bg-[#121316] text-[#EDEDEB]'
+          : 'bg-[#FAF9F6] text-[#1A1C1E]'
       }`}
     >
-      <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-8 space-y-10">
+      <div className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 py-8 space-y-8">
 
         {/* =========================================================================
-            SECTION 1: WELCOME HEADER
+            HEADER (Editorial, Understated, Polished)
         ========================================================================= */}
         <header
           id="section-overview"
-          className={`flex flex-col sm:flex-row sm:items-center justify-between gap-6 pb-6 border-b transition-colors ${
-            isDarkMode ? 'border-slate-800/80' : 'border-slate-200/80'
+          className={`flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-6 border-b transition-colors ${
+            isDarkMode ? 'border-[#282A30]' : 'border-[#E8E7E3]'
           }`}
         >
-          <div className="flex items-center gap-4">
-            <div className="relative">
-              <img
-                src="icons/icon48.png"
-                alt="tabzero logo"
-                className="w-12 h-12 rounded-full object-cover shadow-sm ring-2 ring-indigo-500/20"
-              />
-              <span
-                className={`absolute bottom-0 right-0 w-3.5 h-3.5 rounded-full border-2 ${
-                  isDarkMode ? 'border-[#0B0F19]' : 'border-white'
-                } ${isActive ? 'bg-emerald-500 animate-pulse' : 'bg-slate-300'}`}
-              />
-            </div>
+          <div className="flex items-center gap-3.5">
+            <img
+              src="icons/icon48.png"
+              alt="tabzero logo"
+              className="w-10 h-10 rounded-full object-cover shadow-subtle ring-1 ring-black/5 dark:ring-white/10"
+            />
             <div>
               <div className="flex items-center gap-2">
-                <span className="text-xs font-semibold uppercase tracking-wider text-indigo-500 font-mono">
+                <span className="text-xs font-mono tabular-nums text-stone-400">
                   {todayStr}
                 </span>
-                <span className="text-slate-300 dark:text-slate-700">•</span>
-                <span className="text-xs text-slate-400 font-medium">{greetingText}</span>
+                <span className="text-stone-300 dark:text-stone-700">•</span>
+                <span className="text-xs text-stone-400">{greetingText}</span>
               </div>
-              <h1 className="text-2xl sm:text-3xl font-bold tracking-tight text-slate-900 dark:text-white flex items-center gap-2">
-                tabzero<span className="text-indigo-500">.</span>
+              <h1 className="text-xl font-semibold tracking-tight text-stone-900 dark:text-stone-100 flex items-center gap-1.5">
+                tabzero<span className="text-sage-600 dark:text-sage-400">.</span>
               </h1>
-              <p className="text-xs text-slate-500 dark:text-slate-400">
-                Life happens beyond the screen. Scroll less. Live more.
+              <p className="text-xs text-stone-500 dark:text-stone-400">
+                Life happens beyond the screen.
               </p>
             </div>
           </div>
 
-          <div className="flex items-center gap-3 self-end sm:self-auto">
+          <div className="flex items-center gap-2.5 self-end sm:self-auto">
             {/* Return to Focus Button */}
             <a
               href="blocked.html"
-              title="Enter full-screen nature intervention sanctuary"
-              className={`flex items-center gap-1.5 px-3.5 py-2 text-xs font-semibold rounded-xl border transition-all shadow-subtle ${
+              title="Enter full-screen nature intervention"
+              className={`flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium rounded-lg border transition-colors shadow-subtle ${
                 isDarkMode
-                  ? 'bg-slate-900 hover:bg-slate-800 text-indigo-300 border-indigo-900/40 hover:border-indigo-700'
-                  : 'bg-white hover:bg-indigo-50/60 text-indigo-600 border-indigo-100 hover:border-indigo-200'
+                  ? 'bg-[#191B1F] hover:bg-[#23262C] text-stone-200 border-[#282A30]'
+                  : 'bg-white hover:bg-stone-50 text-stone-800 border-[#E8E7E3]'
               }`}
             >
-              <Compass className="w-4 h-4 text-indigo-400" />
-              <span>Return to Focus</span>
+              <Compass className="w-3.5 h-3.5 text-sage-600 dark:text-sage-400" />
+              <span>Sanctuary View</span>
             </a>
 
-            {/* 5-Step Undo / Redo */}
+            {/* Undo / Redo controls */}
             <HistoryControls
               history={data.history}
               onUndo={handleUndo}
               onRedo={handleRedo}
-              compact={false}
+              isDark={isDarkMode}
             />
 
-            {/* Universal Theme Mode Toggle */}
+            {/* Dark / Light Mode Toggle */}
             <button
               onClick={handleToggleTheme}
               title={`Theme: ${themePref.toUpperCase()} (Click to toggle)`}
-              className={`p-2.5 rounded-xl border transition-all cursor-pointer shadow-subtle ${
+              className={`p-2 rounded-lg border transition-colors cursor-pointer shadow-subtle ${
                 isDarkMode
-                  ? 'bg-[#131B2A] border-[#1F293D] text-amber-300 hover:bg-[#1A253A]'
-                  : 'bg-white border-slate-200 text-indigo-600 hover:bg-slate-50'
+                  ? 'bg-[#191B1F] border-[#282A30] text-stone-300 hover:text-white'
+                  : 'bg-white border-[#E8E7E3] text-stone-600 hover:text-stone-900'
               }`}
             >
               {themePref === 'dark' ? (
-                <Moon className="w-4 h-4 fill-current" />
+                <Moon className="w-3.5 h-3.5" />
               ) : themePref === 'light' ? (
-                <Sun className="w-4 h-4 fill-current" />
+                <Sun className="w-3.5 h-3.5" />
               ) : (
-                <Monitor className="w-4 h-4" />
+                <Monitor className="w-3.5 h-3.5" />
               )}
             </button>
           </div>
         </header>
 
         {/* =========================================================================
-            SECTION 2: DIGITAL OVERVIEW (Digital Usage)
+            SECTION 1: DIGITAL OVERVIEW (Core Metrics Unified Strip)
         ========================================================================= */}
-        <section className="space-y-4">
+        <section className="space-y-3">
           <div className="flex items-center justify-between">
-            <div>
-              <h2 className="text-base font-semibold text-slate-900 dark:text-white tracking-tight flex items-center gap-2">
-                <BarChart2 className="w-4 h-4 text-indigo-500" />
-                Digital Usage & Mindful Balance
-              </h2>
-              <p className="text-xs text-slate-500 dark:text-slate-400">
-                Authentic screen activity tracked from your focused tabs and offline presence.
-              </p>
-            </div>
-            <span className="text-[11px] font-mono text-slate-400 bg-slate-100 dark:bg-slate-800/80 px-2.5 py-1 rounded-full border border-slate-200/60 dark:border-slate-700/60">
+            <h2 className="text-xs font-semibold uppercase tracking-wider text-stone-500 dark:text-stone-400 flex items-center gap-1.5">
+              <BarChart2 className="w-3.5 h-3.5 text-sage-600 dark:text-sage-400" />
+              Digital Usage & Mindful Balance
+            </h2>
+            <span className="font-mono text-[11px] tabular-nums text-stone-400">
               Live Verified
             </span>
           </div>
 
-          <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
-            {/* Card 1: Active Browsing */}
-            <div className={`p-5 rounded-2xl border transition-all ${
+          <div
+            className={`rounded-xl border transition-colors grid grid-cols-2 lg:grid-cols-4 divide-y sm:divide-y-0 sm:divide-x ${
               isDarkMode
-                ? 'bg-[#131B2A] border-[#1F293D] shadow-subtle'
-                : 'bg-white border-slate-200/80 shadow-subtle'
-            }`}>
-              <div className="flex items-center justify-between mb-3">
-                <span className="text-xs font-medium text-slate-500 dark:text-slate-400">
-                  Active Browsing
-                </span>
-                <span className="p-1.5 rounded-lg bg-sky-50 dark:bg-sky-950/60 text-sky-600 dark:text-sky-300 border border-sky-100 dark:border-sky-800/40">
-                  <Globe className="w-4 h-4" />
-                </span>
-              </div>
-              <div className="text-2xl sm:text-3xl font-light font-mono tracking-tight text-slate-900 dark:text-white">
-                {formatDuration(totalBrowsingSeconds)}
-              </div>
-              <p className="text-[11px] text-slate-400 mt-1">
-                Tracked in focused browser windows
-              </p>
-            </div>
-
-            {/* Card 2: Recorded Offline Mindspace */}
-            <div className={`p-5 rounded-2xl border transition-all ${
-              isDarkMode
-                ? 'bg-[#131B2A] border-[#1F293D] shadow-subtle'
-                : 'bg-white border-slate-200/80 shadow-subtle'
-            }`}>
-              <div className="flex items-center justify-between mb-3">
-                <span className="text-xs font-medium text-slate-500 dark:text-slate-400">
-                  Offline Mindspace
-                </span>
-                <span className="p-1.5 rounded-lg bg-emerald-50 dark:bg-emerald-950/60 text-emerald-600 dark:text-emerald-300 border border-emerald-100 dark:border-emerald-800/40">
-                  <Sparkles className="w-4 h-4" />
-                </span>
-              </div>
-              <div className="text-2xl sm:text-3xl font-light font-mono tracking-tight text-slate-900 dark:text-white">
-                {totalOfflineMins}<span className="text-sm font-sans font-normal text-slate-400 ml-1">mins</span>
-              </div>
-              <p className="text-[11px] text-slate-400 mt-1">
-                Goal: {goalMins}m ({goalProgressPct}% achieved)
-              </p>
-            </div>
-
-            {/* Card 3: Shield Deflections */}
-            <div className={`p-5 rounded-2xl border transition-all ${
-              isDarkMode
-                ? 'bg-[#131B2A] border-[#1F293D] shadow-subtle'
-                : 'bg-white border-slate-200/80 shadow-subtle'
-            }`}>
-              <div className="flex items-center justify-between mb-3">
-                <span className="text-xs font-medium text-slate-500 dark:text-slate-400">
-                  Shield Deflections
-                </span>
-                <span className="p-1.5 rounded-lg bg-rose-50 dark:bg-rose-950/60 text-rose-600 dark:text-rose-300 border border-rose-100 dark:border-rose-800/40">
-                  <ShieldAlert className="w-4 h-4" />
-                </span>
-              </div>
-              <div className="text-2xl sm:text-3xl font-light font-mono tracking-tight text-slate-900 dark:text-white">
-                {present.blockedAttemptsTotal}
-              </div>
-              <p className="text-[11px] text-slate-400 mt-1">
-                Distracting tab launches intercepted
-              </p>
-            </div>
-
-            {/* Card 4: Mindful Presence Ratio */}
-            <div className={`p-5 rounded-2xl border transition-all ${
-              isDarkMode
-                ? 'bg-[#131B2A] border-[#1F293D] shadow-subtle'
-                : 'bg-white border-slate-200/80 shadow-subtle'
-            }`}>
-              <div className="flex items-center justify-between mb-3">
-                <span className="text-xs font-medium text-slate-500 dark:text-slate-400">
-                  Presence Ratio
-                </span>
-                <span className="p-1.5 rounded-lg bg-purple-50 dark:bg-purple-950/60 text-purple-600 dark:text-purple-300 border border-purple-100 dark:border-purple-800/40">
-                  <Heart className="w-4 h-4" />
-                </span>
-              </div>
-              <div className="text-2xl sm:text-3xl font-light font-mono tracking-tight text-slate-900 dark:text-white">
-                {presenceRatio}%
-              </div>
-              <p className="text-[11px] text-slate-400 mt-1">
-                Real-world presence vs digital time
-              </p>
-            </div>
-          </div>
-        </section>
-
-        {/* =========================================================================
-            SECTION 3: DETOX GOAL (Detox Progress)
-        ========================================================================= */}
-        <section
-          className={`p-6 sm:p-7 rounded-3xl border transition-all ${
-            isDarkMode
-              ? 'bg-[#131B2A] border-[#1F293D] shadow-subtle'
-              : 'bg-white border-slate-200/80 shadow-subtle'
-          }`}
-        >
-          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-4">
-            <div>
-              <div className="flex items-center gap-2 mb-1">
-                <Target className="w-4 h-4 text-indigo-500" />
-                <h3 className="text-base font-semibold text-slate-900 dark:text-white tracking-tight">
-                  Daily Detox Goal
-                </h3>
-                <span className="text-xs px-2.5 py-0.5 rounded-full bg-indigo-50 dark:bg-indigo-950/60 text-indigo-600 dark:text-indigo-300 border border-indigo-100 dark:border-indigo-800/50 font-semibold font-mono">
-                  {goalProgressPct}% Complete
-                </span>
-              </div>
-              <p className="text-xs text-slate-500 dark:text-slate-400">
-                Target daily offline duration to restore attention, clarity, and genuine balance.
-              </p>
-            </div>
-
-            {/* Quick Goal Adjuster */}
-            <div className="flex items-center gap-1.5 bg-slate-50 dark:bg-slate-800/60 p-1 rounded-xl border border-slate-200/60 dark:border-slate-700/60">
-              <span className="text-[11px] text-slate-400 px-2 font-medium">Goal:</span>
-              {[30, 60, 90, 120].map(mins => (
-                <button
-                  key={mins}
-                  onClick={() => handleSetDailyGoal(mins)}
-                  className={`px-2.5 py-1 text-xs font-semibold rounded-lg transition-all cursor-pointer ${
-                    goalMins === mins
-                      ? 'bg-white dark:bg-slate-700 text-slate-900 dark:text-white shadow-sm'
-                      : 'text-slate-500 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white'
-                  }`}
-                >
-                  {mins}m
-                </button>
-              ))}
-            </div>
-          </div>
-
-          {/* Progress Bar with Milestone Markers */}
-          <div className="space-y-2">
-            <div className="w-full bg-slate-100 dark:bg-slate-800 rounded-full h-3 overflow-hidden p-0.5 relative">
-              <div
-                className="bg-gradient-to-r from-emerald-400 via-indigo-400 to-indigo-500 h-full rounded-full transition-all duration-700 shadow-sm"
-                style={{ width: `${goalProgressPct}%` }}
-              />
-            </div>
-            <div className="flex justify-between text-[11px] font-mono text-slate-400">
-              <span>0m</span>
-              <span>{Math.round(goalMins * 0.25)}m</span>
-              <span className="font-semibold text-slate-600 dark:text-slate-300">
-                {totalOfflineMins}m / {goalMins}m Today
+                ? 'bg-[#191B1F] border-[#282A30] divide-[#282A30]'
+                : 'bg-[#FFFFFF] border-[#E8E7E3] divide-[#E8E7E3] shadow-subtle'
+            }`}
+          >
+            {/* Metric 1: Offline Mindspace */}
+            <div className="p-5">
+              <span className="text-[11px] font-medium uppercase tracking-wider text-stone-500 dark:text-stone-400 block mb-1">
+                Offline Mindspace
               </span>
-              <span>{Math.round(goalMins * 0.75)}m</span>
-              <span>{goalMins}m Goal</span>
+              <div className="flex items-baseline gap-1.5">
+                <span className="text-3xl font-mono tabular-nums font-light">
+                  {totalOfflineMins}
+                </span>
+                <span className="text-xs text-stone-400">mins today</span>
+              </div>
+              <p className="font-mono text-[11px] tabular-nums text-stone-400 mt-1">
+                Goal: {goalMins}m · <span className="text-sage-600 dark:text-sage-400 font-medium">{goalProgressPct}%</span>
+              </p>
+            </div>
+
+            {/* Metric 2: Active Browsing */}
+            <div className="p-5">
+              <span className="text-[11px] font-medium uppercase tracking-wider text-stone-500 dark:text-stone-400 block mb-1">
+                Active Browsing
+              </span>
+              <div className="flex items-baseline gap-1.5">
+                <span className="text-3xl font-mono tabular-nums font-light">
+                  {formatDuration(totalBrowsingSeconds)}
+                </span>
+              </div>
+              <p className="text-[11px] text-stone-400 mt-1">
+                {domainUsageList.length} domains tracked today
+              </p>
+            </div>
+
+            {/* Metric 3: Shield Deflections */}
+            <div className="p-5">
+              <span className="text-[11px] font-medium uppercase tracking-wider text-stone-500 dark:text-stone-400 block mb-1">
+                Deflections
+              </span>
+              <div className="flex items-baseline gap-1.5">
+                <span className="text-3xl font-mono tabular-nums font-light">
+                  {present.blockedAttemptsTotal}
+                </span>
+                <span className="text-xs text-stone-400">stopped</span>
+              </div>
+              <p className="text-[11px] text-sage-600 dark:text-sage-400 mt-1">
+                Shield active
+              </p>
+            </div>
+
+            {/* Metric 4: Daily Goal */}
+            <div className="p-5">
+              <div className="flex items-center justify-between text-stone-500 dark:text-stone-400 mb-1">
+                <span className="text-[11px] font-medium uppercase tracking-wider">
+                  Detox Target
+                </span>
+                <span className="font-mono text-[11px] tabular-nums text-sage-600 dark:text-sage-400 font-semibold">
+                  {goalProgressPct}%
+                </span>
+              </div>
+              <div className="flex items-baseline gap-1.5">
+                <span className="text-3xl font-mono tabular-nums font-light">
+                  {goalMins}
+                </span>
+                <span className="text-xs text-stone-400">mins/day</span>
+              </div>
+              <div className="w-full bg-stone-100 dark:bg-stone-800 rounded-full h-1 mt-2.5 overflow-hidden">
+                <div
+                  className="bg-sage-600 h-full transition-all duration-500"
+                  style={{ width: `${goalProgressPct}%` }}
+                />
+              </div>
             </div>
           </div>
         </section>
 
         {/* =========================================================================
-            SECTION 4: ACTIVE FOCUS (Active Focus)
+            SECTION 2: ACTIVE FOCUS SESSION
+            (Renamed from 'Active Focus Sanctuary' to 'Focus Session' / 'Digital Detox')
         ========================================================================= */}
         <section
           id="section-focus"
-          className={`p-6 sm:p-8 rounded-3xl border transition-all ${
+          className={`rounded-xl p-6 border transition-colors ${
             isDarkMode
-              ? 'bg-[#131B2A] border-[#1F293D] shadow-subtle'
-              : 'bg-white border-slate-200/80 shadow-subtle'
+              ? 'bg-[#191B1F] border-[#282A30]'
+              : 'bg-[#FFFFFF] border-[#E8E7E3] shadow-subtle'
           }`}
         >
-          <div className="flex flex-col md:flex-row md:items-center justify-between gap-6 pb-6 border-b border-slate-100 dark:border-slate-800">
-            <div>
-              <div className="flex items-center gap-3 mb-2">
-                <span
-                  className={`w-3 h-3 rounded-full ${
-                    isActive
-                      ? 'bg-emerald-500 animate-pulse shadow-[0_0_12px_rgba(16,185,129,0.7)]'
-                      : isPaused
-                      ? 'bg-amber-400'
-                      : 'bg-slate-300 dark:bg-slate-700'
-                  }`}
-                />
-                <h2 className="text-xl font-bold tracking-tight text-slate-900 dark:text-white">
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-5 border-b border-stone-100 dark:border-stone-800">
+            <div className="flex items-center gap-3">
+              <span
+                className={`w-2.5 h-2.5 rounded-full ${
+                  isActive
+                    ? 'bg-sage-500'
+                    : isPaused
+                    ? 'bg-amber-500'
+                    : 'bg-stone-300 dark:bg-stone-700'
+                }`}
+              />
+              <div>
+                <h3 className="text-base font-semibold tracking-tight text-stone-900 dark:text-stone-100">
                   {isActive
                     ? 'Digital Detox in Progress'
                     : isPaused
                     ? 'Detox Session Paused'
-                    : 'Active Focus Sanctuary'}
-                </h2>
-
-                {/* On / Off Button */}
-                <button
-                  type="button"
-                  onClick={handleToggleOnOff}
-                  title={isActive ? 'Detox is Active. Click to Turn OFF' : 'Click to Turn ON'}
-                  className={`flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-bold transition-all cursor-pointer ${
-                    isActive
-                      ? 'bg-emerald-500 hover:bg-emerald-600 text-white shadow-[0_0_12px_rgba(16,185,129,0.4)]'
-                      : isDarkMode
-                      ? 'bg-slate-800 text-slate-400 hover:text-white border border-slate-700'
-                      : 'bg-slate-100 text-slate-600 hover:text-slate-900 border border-slate-200'
-                  }`}
-                >
-                  <Power className="w-3.5 h-3.5" />
-                  <span>{isActive ? 'ON' : 'OFF'}</span>
-                </button>
+                    : 'Focus Session'}
+                </h3>
+                <p className="text-xs text-stone-500 dark:text-stone-400 mt-0.5">
+                  {isActive
+                    ? 'Restricted sites are actively redirected to nature.'
+                    : 'Select a duration or toggle continuous shielding.'}
+                </p>
               </div>
-
-              <p className="text-xs text-slate-500 dark:text-slate-400 max-w-lg">
-                {isActive
-                  ? 'Restricted sites are actively redirected to peaceful nature. Breathe deep and embrace the present moment.'
-                  : 'Start a timed detox or turn ON shielding to deflect distraction loops.'}
-              </p>
             </div>
 
-            {/* Quick Action Shortcuts */}
+            {/* On / Off Button */}
             <div className="flex items-center gap-2">
-              <a
-                href="blocked.html"
-                className={`flex items-center gap-1.5 px-4 py-2.5 rounded-xl text-xs font-semibold transition-all shadow-subtle ${
-                  isDarkMode
-                    ? 'bg-indigo-950/70 hover:bg-indigo-900 text-indigo-300 border border-indigo-800/60'
-                    : 'bg-indigo-50 hover:bg-indigo-100 text-indigo-700 border border-indigo-100'
+              <span className="text-xs text-stone-500 font-medium">Continuous Shield:</span>
+              <button
+                type="button"
+                onClick={handleToggleOnOff}
+                title={isActive ? 'Detox is Active. Click to Turn OFF' : 'Click to Turn ON'}
+                className={`flex items-center gap-1.5 px-3 py-1 rounded-md text-xs font-semibold transition-colors cursor-pointer ${
+                  isActive
+                    ? 'bg-sage-600 hover:bg-sage-700 text-white'
+                    : isDarkMode
+                    ? 'bg-[#121316] text-stone-300 hover:text-white border border-[#282A30]'
+                    : 'bg-[#FAF9F6] text-stone-700 hover:text-stone-900 border border-[#E5E4DF]'
                 }`}
               >
-                <Compass className="w-4 h-4 text-indigo-500" />
-                <span>Return to Focus Sanctuary</span>
-                <ArrowUpRight className="w-3.5 h-3.5 opacity-60" />
-              </a>
+                <Power className="w-3 h-3" />
+                <span>{isActive ? 'ON' : 'OFF'}</span>
+              </button>
             </div>
           </div>
 
-          {/* Session Timer & Controls */}
-          {session ? (
-            <div className="pt-6 flex flex-col md:flex-row md:items-center justify-between gap-6">
-              <div>
-                <span className="text-xs uppercase tracking-wider font-semibold text-slate-400 block mb-1">
-                  {session.isIndefinite ? 'Time Elapsed' : 'Session Countdown Remaining'}
-                </span>
-                <div className="text-4xl sm:text-5xl font-light font-mono tracking-tight text-slate-900 dark:text-white drop-shadow-sm">
-                  {formatTimeRemaining(timeValue)}
+          <div className="py-6">
+            {isActive || isPaused ? (
+              <div className="flex flex-col items-center justify-center space-y-4">
+                <div className="font-mono text-5xl sm:text-6xl font-light tracking-tight tabular-nums">
+                  {session?.isIndefinite ? 'Active' : formatTimeRemaining(timeValue)}
+                </div>
+
+                <div className="flex items-center gap-3 pt-2">
+                  {isActive ? (
+                    <button
+                      onClick={handlePauseSession}
+                      className="flex items-center gap-1.5 px-5 py-2 bg-stone-100 dark:bg-stone-800 hover:bg-stone-200 dark:hover:bg-stone-700 text-xs font-medium rounded-lg cursor-pointer transition-colors"
+                    >
+                      <Pause className="w-3.5 h-3.5" /> Pause
+                    </button>
+                  ) : (
+                    <button
+                      onClick={handleResumeSession}
+                      className="flex items-center gap-1.5 px-5 py-2 bg-sage-600 hover:bg-sage-700 text-white text-xs font-medium rounded-lg cursor-pointer transition-colors shadow-subtle"
+                    >
+                      <Play className="w-3.5 h-3.5" /> Resume
+                    </button>
+                  )}
+                  <button
+                    onClick={handleCancelSession}
+                    className="px-4 py-2 text-stone-500 hover:text-rose-600 dark:hover:text-rose-400 text-xs font-medium rounded-lg border border-stone-200 dark:border-stone-700 cursor-pointer transition-colors"
+                  >
+                    End Session
+                  </button>
                 </div>
               </div>
+            ) : (
+              <div className="space-y-5 max-w-xl mx-auto">
+                {/* Presets */}
+                <div className="flex items-center justify-center gap-2">
+                  {PRESET_DURATIONS.map(p => {
+                    const isSelected = customMinutes * 60 + customHours * 3600 === p.seconds;
+                    return (
+                      <button
+                        key={p.label}
+                        onClick={() => {
+                          setCustomHours(Math.floor(p.seconds / 3600));
+                          setCustomMinutes(Math.floor((p.seconds % 3600) / 60));
+                        }}
+                        className={`px-4 py-1.5 text-xs font-mono tabular-nums rounded-lg border transition-colors cursor-pointer ${
+                          isSelected
+                            ? 'bg-sage-50 border-sage-500 text-sage-800 dark:bg-sage-950/70 dark:border-sage-600 dark:text-sage-200 font-semibold'
+                            : isDarkMode
+                            ? 'bg-[#121316] border-[#282A30] text-stone-300 hover:border-stone-600'
+                            : 'bg-[#FAF9F6] border-[#E8E7E3] text-stone-700 hover:border-stone-400'
+                        }`}
+                      >
+                        {p.label}
+                      </button>
+                    );
+                  })}
+                </div>
 
-              <div className="flex items-center gap-3">
-                {isActive ? (
-                  <button
-                    onClick={handlePauseSession}
-                    className={`flex items-center gap-2 px-5 py-2.5 rounded-xl text-xs font-semibold transition-all cursor-pointer ${
-                      isDarkMode
-                        ? 'bg-slate-800 hover:bg-slate-700 text-white'
-                        : 'bg-slate-100 hover:bg-slate-200 text-slate-700'
-                    }`}
-                  >
-                    <Pause className="w-4 h-4" /> Pause
-                  </button>
-                ) : (
-                  <button
-                    onClick={handleResumeSession}
-                    className="flex items-center gap-2 px-5 py-2.5 rounded-xl text-xs font-semibold bg-emerald-500 hover:bg-emerald-600 text-white shadow-subtle cursor-pointer"
-                  >
-                    <Play className="w-4 h-4 fill-current" /> Resume
-                  </button>
-                )}
-
-                <button
-                  onClick={handleCompleteSession}
-                  className={`flex items-center gap-2 px-5 py-2.5 rounded-xl text-xs font-semibold transition-all cursor-pointer ${
-                    isDarkMode
-                      ? 'bg-emerald-950/60 hover:bg-emerald-900/80 text-emerald-300 border border-emerald-800/60'
-                      : 'bg-emerald-50 hover:bg-emerald-100 text-emerald-700 border border-emerald-200'
-                  }`}
-                >
-                  <CheckCircle2 className="w-4 h-4" /> Complete Session
-                </button>
-
-                <button
-                  onClick={handleCancelSession}
-                  className={`flex items-center gap-2 px-4 py-2.5 rounded-xl text-xs font-semibold transition-all cursor-pointer ${
-                    isDarkMode
-                      ? 'bg-rose-950/40 hover:bg-rose-900/60 text-rose-300 border border-rose-900/50'
-                      : 'bg-rose-50 hover:bg-rose-100 text-rose-700 border border-rose-200'
-                  }`}
-                >
-                  <XCircle className="w-4 h-4" /> Admit Defeat
-                </button>
-              </div>
-            </div>
-          ) : (
-            /* Configure New Session */
-            <div className="pt-6 space-y-5">
-              <div className="flex flex-wrap items-center gap-3">
-                <span className="text-xs font-medium text-slate-400">Quick Presets:</span>
-                {PRESET_DURATIONS.map(p => (
-                  <button
-                    key={p.label}
-                    onClick={() => handleStartSession(p.seconds)}
-                    className={`px-3 py-1.5 rounded-xl text-xs font-semibold transition-all cursor-pointer border ${
-                      isDarkMode
-                        ? 'bg-slate-800/80 hover:bg-slate-700 text-slate-200 border-slate-700'
-                        : 'bg-slate-50 hover:bg-slate-100 text-slate-700 border-slate-200'
-                    }`}
-                  >
-                    {p.label}
-                  </button>
-                ))}
-              </div>
-
-              <div className="flex flex-col sm:flex-row items-center gap-4">
-                <div className="flex items-center gap-2 bg-slate-50 dark:bg-slate-800/60 p-2 rounded-2xl border border-slate-200 dark:border-slate-700">
-                  <div className="text-center px-2">
+                {/* Duration Stepper */}
+                <div className="flex items-center justify-center gap-3">
+                  <div className="flex items-center gap-1.5">
                     <input
                       type="number"
                       min="0"
-                      max="23"
+                      max="12"
                       value={customHours}
                       onChange={e => setCustomHours(Math.max(0, parseInt(e.target.value) || 0))}
-                      className="w-12 text-center text-lg font-mono font-semibold bg-transparent focus:outline-none"
+                      className={`w-16 px-2.5 py-1.5 text-center font-mono tabular-nums text-sm rounded-lg border outline-none ${
+                        isDarkMode
+                          ? 'bg-[#121316] border-[#282A30] text-white focus:border-sage-500'
+                          : 'bg-[#FAF9F6] border-[#E5E4DF] text-stone-900 focus:border-sage-600'
+                      }`}
                     />
-                    <span className="text-[10px] uppercase tracking-wider text-slate-400 block">Hours</span>
+                    <span className="text-xs text-stone-400 font-medium">hr</span>
                   </div>
-                  <span className="font-mono text-slate-400 font-bold">:</span>
-                  <div className="text-center px-2">
+
+                  <span className="text-stone-300 dark:text-stone-700">:</span>
+
+                  <div className="flex items-center gap-1.5">
                     <input
                       type="number"
                       min="0"
                       max="59"
                       value={customMinutes}
-                      onChange={e => setCustomMinutes(Math.max(0, parseInt(e.target.value) || 0))}
-                      className="w-12 text-center text-lg font-mono font-semibold bg-transparent focus:outline-none"
+                      onChange={e => setCustomMinutes(Math.max(0, Math.min(59, parseInt(e.target.value) || 0)))}
+                      className={`w-16 px-2.5 py-1.5 text-center font-mono tabular-nums text-sm rounded-lg border outline-none ${
+                        isDarkMode
+                          ? 'bg-[#121316] border-[#282A30] text-white focus:border-sage-500'
+                          : 'bg-[#FAF9F6] border-[#E5E4DF] text-stone-900 focus:border-sage-600'
+                      }`}
                     />
-                    <span className="text-[10px] uppercase tracking-wider text-slate-400 block">Mins</span>
-                  </div>
-                  <span className="font-mono text-slate-400 font-bold">:</span>
-                  <div className="text-center px-2">
-                    <input
-                      type="number"
-                      min="0"
-                      max="59"
-                      value={customSeconds}
-                      onChange={e => setCustomSeconds(Math.max(0, parseInt(e.target.value) || 0))}
-                      className="w-12 text-center text-lg font-mono font-semibold bg-transparent focus:outline-none"
-                    />
-                    <span className="text-[10px] uppercase tracking-wider text-slate-400 block">Secs</span>
+                    <span className="text-xs text-stone-400 font-medium">min</span>
                   </div>
                 </div>
 
-                <button
-                  onClick={() => {
-                    const secs = customHours * 3600 + customMinutes * 60 + customSeconds;
-                    handleStartSession(secs > 0 ? secs : 1800);
-                  }}
-                  className="w-full sm:w-auto px-6 py-3.5 rounded-2xl text-xs font-bold bg-slate-900 hover:bg-slate-800 dark:bg-white dark:hover:bg-slate-100 dark:text-slate-900 text-white transition-all shadow-subtle cursor-pointer flex items-center justify-center gap-2"
-                >
-                  <Sparkles className="w-4 h-4 text-indigo-400" />
-                  <span>Start Timed Detox ({formatTimeRemaining(customHours * 3600 + customMinutes * 60 + customSeconds || 1800)})</span>
-                </button>
+                <div className="text-center pt-2">
+                  <button
+                    onClick={() => handleStartSession(customHours * 3600 + customMinutes * 60)}
+                    className="px-8 py-2.5 bg-sage-600 hover:bg-sage-700 text-white text-xs font-semibold rounded-lg cursor-pointer transition-colors shadow-subtle"
+                  >
+                    Start Focused Detox
+                  </button>
+                </div>
               </div>
-            </div>
-          )}
+            )}
+          </div>
         </section>
 
         {/* =========================================================================
-            SECTION 5: WEBSITE USAGE & ATTENTION SHARE (Category-Free)
+            SECTION 3: WEBSITE USAGE (Clean Ranked List)
         ========================================================================= */}
         <section
           id="section-progress"
-          className="grid grid-cols-1 lg:grid-cols-2 gap-6"
-        >
-          {/* Top Visited Sites */}
-          <div className={`p-6 sm:p-7 rounded-3xl border transition-all ${
+          className={`rounded-xl p-6 border transition-colors ${
             isDarkMode
-              ? 'bg-[#131B2A] border-[#1F293D] shadow-subtle'
-              : 'bg-white border-slate-200/80 shadow-subtle'
-          }`}>
-            <div className="flex items-center justify-between mb-4">
-              <div>
-                <h3 className="text-base font-semibold text-slate-900 dark:text-white tracking-tight flex items-center gap-2">
-                  <Globe className="w-4 h-4 text-indigo-500" />
-                  Most Visited Websites
-                </h3>
-                <p className="text-xs text-slate-500 dark:text-slate-400">
-                  Real active duration from focused tabs.
-                </p>
-              </div>
-              <span className="text-xs font-mono font-semibold text-slate-600 dark:text-slate-300">
-                {formatDuration(totalBrowsingSeconds)}
-              </span>
+              ? 'bg-[#191B1F] border-[#282A30]'
+              : 'bg-[#FFFFFF] border-[#E8E7E3] shadow-subtle'
+          }`}
+        >
+          <div className="flex items-center justify-between pb-4 border-b border-stone-100 dark:border-stone-800 mb-4">
+            <div>
+              <h3 className="text-sm font-semibold tracking-tight text-stone-900 dark:text-stone-100 flex items-center gap-2">
+                <Globe className="w-4 h-4 text-sage-600 dark:text-sage-400" />
+                Website Usage Today
+              </h3>
+              <p className="text-xs text-stone-500 dark:text-stone-400 mt-0.5">
+                Screen time tracked from your focused tabs today.
+              </p>
             </div>
+            <span className="font-mono text-xs tabular-nums text-stone-400">
+              Total: {formatDuration(totalBrowsingSeconds)}
+            </span>
+          </div>
 
-            <div className="space-y-3">
-              {domainUsageList.slice(0, 5).map(item => {
-                const pct = totalBrowsingSeconds > 0
-                  ? Math.round((item.timeSpentSeconds / totalBrowsingSeconds) * 100)
-                  : 0;
-                return (
-                  <div
-                    key={item.domain}
-                    className="p-3 rounded-2xl bg-slate-50 dark:bg-slate-800/40 border border-slate-100 dark:border-slate-800/80"
-                  >
-                    <div className="flex items-center justify-between text-xs mb-1.5">
-                      <div className="flex items-center gap-2 truncate">
-                        <span className="w-2 h-2 rounded-full bg-indigo-400" />
-                        <span className="font-semibold text-slate-800 dark:text-slate-200 truncate">
-                          {item.domain}
-                        </span>
-                      </div>
-                      <span className="font-mono text-slate-600 dark:text-slate-300 font-semibold shrink-0">
-                        {formatDuration(item.timeSpentSeconds)} ({pct}%)
-                      </span>
-                    </div>
-                    <div className="w-full bg-slate-200/60 dark:bg-slate-700 rounded-full h-1.5 overflow-hidden">
+          <div className="space-y-2">
+            {domainUsageList.slice(0, 7).map((item, index) => {
+              const pct = totalBrowsingSeconds > 0
+                ? Math.round((item.timeSpentSeconds / totalBrowsingSeconds) * 100)
+                : 0;
+
+              return (
+                <div
+                  key={item.domain}
+                  className={`flex items-center justify-between py-2 px-3 rounded-lg text-xs transition-colors ${
+                    isDarkMode ? 'bg-[#121316]/50' : 'bg-[#FAF9F6]'
+                  }`}
+                >
+                  <div className="flex items-center gap-3 min-w-0 flex-1 pr-4">
+                    <span className="font-mono text-stone-400 w-5 tabular-nums text-[11px]">
+                      {String(index + 1).padStart(2, '0')}
+                    </span>
+                    <span className="font-medium text-stone-800 dark:text-stone-200 truncate w-36 sm:w-48">
+                      {item.domain}
+                    </span>
+                    <div className="flex-1 hidden sm:block bg-stone-200/50 dark:bg-stone-800 rounded-full h-1 overflow-hidden">
                       <div
-                        className="bg-indigo-400 h-1.5 rounded-full transition-all duration-500"
+                        className="bg-sage-600 h-full rounded-full"
                         style={{ width: `${pct}%` }}
                       />
                     </div>
                   </div>
-                );
-              })}
 
-              {domainUsageList.length === 0 && (
-                <div className="py-8 text-center text-xs text-slate-400 italic">
-                  Browsing time will record as you actively visit websites.
-                </div>
-              )}
-            </div>
-          </div>
-
-          {/* Attention Share by Website (Category-Free) */}
-          <div className={`p-6 sm:p-7 rounded-3xl border transition-all ${
-            isDarkMode
-              ? 'bg-[#131B2A] border-[#1F293D] shadow-subtle'
-              : 'bg-white border-slate-200/80 shadow-subtle'
-          }`}>
-            <div className="flex items-center justify-between mb-4">
-              <div>
-                <h3 className="text-base font-semibold text-slate-900 dark:text-white tracking-tight flex items-center gap-2">
-                  <Layers className="w-4 h-4 text-purple-500" />
-                  Screen Time Distribution
-                </h3>
-                <p className="text-xs text-slate-500 dark:text-slate-400">
-                  Proportion of focused browsing dedicated to each website.
-                </p>
-              </div>
-            </div>
-
-            <div className="space-y-4">
-              {topDomainShares.map(item => (
-                <div key={item.domain} className="space-y-1.5">
-                  <div className="flex items-center justify-between text-xs">
-                    <span className="font-semibold text-slate-700 dark:text-slate-300">{item.domain}</span>
-                    <span className="font-mono text-slate-500 dark:text-slate-400">
-                      {formatDuration(item.timeSpentSeconds)} • {item.pct}% share
+                  <div className="flex items-center gap-3 shrink-0">
+                    <span className="font-mono text-[11px] tabular-nums text-stone-400 w-10 text-right">
+                      {pct}%
+                    </span>
+                    <span className="font-mono text-xs tabular-nums font-semibold text-stone-900 dark:text-stone-100 w-16 text-right">
+                      {formatDuration(item.timeSpentSeconds)}
                     </span>
                   </div>
-                  <div className="w-full bg-slate-100 dark:bg-slate-800 rounded-full h-2 overflow-hidden">
-                    <div
-                      className="bg-gradient-to-r from-indigo-400 to-purple-400 h-2 rounded-full transition-all duration-500"
-                      style={{ width: `${item.pct}%` }}
-                    />
-                  </div>
                 </div>
-              ))}
+              );
+            })}
 
-              {topDomainShares.length === 0 && (
-                <div className="py-8 text-center text-xs text-slate-400 italic">
-                  Browsing distribution will display as you explore websites.
-                </div>
-              )}
-            </div>
+            {domainUsageList.length === 0 && (
+              <p className="text-xs text-stone-400 italic py-4 text-center">
+                No active websites tracked yet today.
+              </p>
+            )}
           </div>
         </section>
 
         {/* =========================================================================
-            SECTION 6: WEBSITE RESTRICTIONS (Category-Free Shield Rules)
+            SECTION 4: WEBSITE RESTRICTIONS & SHIELD RULES
         ========================================================================= */}
         <section
-          id="section-restrictions"
-          className={`p-6 sm:p-7 rounded-3xl border transition-all ${
+          className={`rounded-xl p-6 border transition-colors ${
             isDarkMode
-              ? 'bg-[#131B2A] border-[#1F293D] shadow-subtle'
-              : 'bg-white border-slate-200/80 shadow-subtle'
+              ? 'bg-[#191B1F] border-[#282A30]'
+              : 'bg-[#FFFFFF] border-[#E8E7E3] shadow-subtle'
           }`}
         >
-          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-6">
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-4 border-b border-stone-100 dark:border-stone-800 mb-4">
             <div>
-              <div className="flex items-center gap-2 mb-1">
-                <Shield className="w-4 h-4 text-indigo-500" />
-                <h3 className="text-base font-semibold text-slate-900 dark:text-white tracking-tight">
+              <div className="flex items-center gap-2">
+                <Shield className="w-4 h-4 text-sage-600 dark:text-sage-400" />
+                <h3 className="text-sm font-semibold tracking-tight text-stone-900 dark:text-stone-100">
                   Website Restrictions & Shield Rules
                 </h3>
-                <span className="text-xs px-2.5 py-0.5 rounded-full bg-emerald-50 dark:bg-emerald-950/60 text-emerald-600 dark:text-emerald-300 border border-emerald-100 dark:border-emerald-800/50 font-semibold font-mono">
+                <span className="font-mono text-xs tabular-nums px-2 py-0.5 rounded bg-sage-50 dark:bg-sage-950/60 text-sage-700 dark:text-sage-300 border border-sage-200/60 dark:border-sage-800/50">
                   {present.restrictedSites.filter(s => s.enabled).length}/{present.restrictedSites.length} Active
                 </span>
               </div>
-              <p className="text-xs text-slate-500 dark:text-slate-400">
+              <p className="text-xs text-stone-500 dark:text-stone-400 mt-0.5">
                 Blocked websites are redirected to peaceful nature intervention during active sessions.
               </p>
             </div>
 
-            {/* Add Website Form - Pure domain input, zero category selector */}
-            <form onSubmit={handleAddSite} className="flex items-center gap-2">
+            <form onSubmit={handleAddSite} className="flex gap-2">
               <input
                 type="text"
                 placeholder="e.g. reddit.com"
                 value={newDomain}
                 onChange={e => setNewDomain(e.target.value)}
-                className={`px-3 py-2 text-xs rounded-xl border focus:outline-none focus:ring-1 focus:ring-indigo-400 ${
+                className={`px-3 py-1.5 text-xs rounded-lg border outline-none transition-colors ${
                   isDarkMode
-                    ? 'bg-slate-800 border-slate-700 text-white placeholder-slate-500'
-                    : 'bg-slate-50 border-slate-200 text-slate-900 placeholder-slate-400'
+                    ? 'bg-[#121316] border-[#282A30] text-white placeholder-stone-500 focus:border-sage-500'
+                    : 'bg-[#FAF9F6] border-[#E5E4DF] text-stone-900 placeholder-stone-400 focus:border-sage-600'
                 }`}
               />
               <button
                 type="submit"
-                className="px-3.5 py-2 text-xs font-bold rounded-xl bg-indigo-500 hover:bg-indigo-600 text-white transition-all shadow-subtle cursor-pointer flex items-center gap-1"
+                className="flex items-center gap-1 px-3 py-1.5 bg-sage-600 hover:bg-sage-700 text-white text-xs font-medium rounded-lg cursor-pointer transition-colors shadow-subtle"
               >
-                <Plus className="w-3.5 h-3.5" /> Add Website
+                <Plus className="w-3.5 h-3.5" /> Add
               </button>
             </form>
           </div>
 
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3.5">
+          <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-2.5">
             {present.restrictedSites.map(site => (
               <div
                 key={site.id}
-                className={`p-3.5 rounded-2xl border flex items-center justify-between gap-3 transition-all ${
+                className={`flex items-center justify-between p-2.5 rounded-lg border transition-colors ${
                   site.enabled
                     ? isDarkMode
-                      ? 'bg-slate-800/40 border-slate-700/80'
-                      : 'bg-white border-slate-200'
+                      ? 'bg-[#121316]/50 border-[#282A30]'
+                      : 'bg-[#FAF9F6] border-[#EFEFEA]'
                     : isDarkMode
-                    ? 'bg-slate-900/60 border-slate-800/60 opacity-50'
-                    : 'bg-slate-50 border-slate-100 opacity-60'
+                    ? 'bg-[#121316]/20 border-[#282A30]/40 opacity-50'
+                    : 'bg-[#F7F6F2] border-[#EAE9E4] opacity-50'
                 }`}
               >
-                <div className="truncate">
-                  <div className="flex items-center gap-1.5 truncate">
-                    <span className={`w-1.5 h-1.5 rounded-full ${site.enabled ? 'bg-emerald-500' : 'bg-slate-300'}`} />
-                    <span className="text-xs font-semibold text-slate-800 dark:text-slate-200 truncate">
-                      {site.domain}
-                    </span>
-                  </div>
+                <div className="flex items-center gap-2 min-w-0">
+                  <span className={`w-1.5 h-1.5 rounded-full ${site.enabled ? 'bg-sage-500' : 'bg-stone-300'}`} />
+                  <span
+                    className={`text-xs font-medium truncate ${
+                      site.enabled ? (isDarkMode ? 'text-stone-200' : 'text-stone-800') : 'text-stone-400 line-through'
+                    }`}
+                  >
+                    {site.domain}
+                  </span>
                 </div>
 
-                <div className="flex items-center gap-1.5">
+                <div className="flex items-center gap-1.5 shrink-0">
                   <button
                     onClick={() => handleToggleSite(site.id)}
                     title={site.enabled ? 'Disable rule' : 'Enable rule'}
                     className={`w-7 h-4 rounded-full transition-colors relative cursor-pointer ${
-                      site.enabled ? 'bg-emerald-500' : 'bg-slate-300 dark:bg-slate-700'
+                      site.enabled ? 'bg-sage-600' : 'bg-stone-300 dark:bg-stone-700'
                     }`}
                   >
                     <span
@@ -1067,9 +889,9 @@ export const Dashboard: React.FC = () => {
                   <button
                     onClick={() => handleRemoveSite(site.id)}
                     title="Remove rule"
-                    className="p-1 text-slate-400 hover:text-rose-500 rounded-lg transition-colors cursor-pointer"
+                    className="p-1 text-stone-400 hover:text-rose-600 transition-colors cursor-pointer"
                   >
-                    <Trash2 className="w-3.5 h-3.5" />
+                    <Trash2 className="w-3 h-3" />
                   </button>
                 </div>
               </div>
@@ -1078,213 +900,127 @@ export const Dashboard: React.FC = () => {
         </section>
 
         {/* =========================================================================
-            SECTION 7: WEEKLY ANALYTICS (Browsing vs Offline Comparison)
+            SECTION 5: WEEKLY ANALYTICS (Clean Restrained Chart)
         ========================================================================= */}
         <section
-          className={`p-6 sm:p-7 rounded-3xl border transition-all ${
+          className={`rounded-xl p-6 border transition-colors ${
             isDarkMode
-              ? 'bg-[#131B2A] border-[#1F293D] shadow-subtle'
-              : 'bg-white border-slate-200/80 shadow-subtle'
+              ? 'bg-[#191B1F] border-[#282A30]'
+              : 'bg-[#FFFFFF] border-[#E8E7E3] shadow-subtle'
           }`}
         >
-          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-6">
+          <div className="flex items-center justify-between pb-4 border-b border-stone-100 dark:border-stone-800 mb-5">
             <div>
-              <h3 className="text-base font-semibold text-slate-900 dark:text-white tracking-tight flex items-center gap-2">
-                <TrendingUp className="w-4 h-4 text-emerald-500" />
-                Weekly Attention Analytics
+              <h3 className="text-sm font-semibold tracking-tight text-stone-900 dark:text-stone-100">
+                Weekly Screen vs. Offline Time
               </h3>
-              <p className="text-xs text-slate-500 dark:text-slate-400">
-                Comparing active browsing minutes against recorded offline presence throughout the week.
+              <p className="text-xs text-stone-500 dark:text-stone-400 mt-0.5">
+                Comparing screen time against offline presence across the week.
               </p>
             </div>
 
-            <div className="flex items-center gap-4 text-xs">
-              <div className="flex items-center gap-1.5">
-                <span className="w-3 h-3 rounded-sm bg-sky-400" />
-                <span className="text-slate-600 dark:text-slate-400">Browsing Time</span>
-              </div>
-              <div className="flex items-center gap-1.5">
-                <span className="w-3 h-3 rounded-sm bg-emerald-400" />
-                <span className="text-slate-600 dark:text-slate-400">Offline Time</span>
-              </div>
+            <div className="flex items-center gap-3 text-xs">
+              <span className="flex items-center gap-1.5 text-stone-500">
+                <span className="w-2.5 h-2.5 rounded-sm bg-stone-300 dark:bg-stone-600" />
+                <span>Screen Time</span>
+              </span>
+              <span className="flex items-center gap-1.5 text-sage-600 dark:text-sage-400 font-medium">
+                <span className="w-2.5 h-2.5 rounded-sm bg-sage-600" />
+                <span>Offline Mindspace</span>
+              </span>
             </div>
           </div>
 
-          {/* Minimalist Dual-Bar Chart */}
-          <div className="h-48 flex items-end justify-between gap-3 pt-6 border-b border-slate-100 dark:border-slate-800">
-            {weeklyChartData.map((d, i) => {
-              const maxScale = 120;
-              const browsingHeight = Math.min(100, Math.max(12, Math.round((d.browsingMins / maxScale) * 100)));
-              const offlineHeight = Math.min(100, Math.max(12, Math.round((d.offlineMins / maxScale) * 100)));
+          <div className="h-44 flex items-end justify-between gap-3 pt-4 px-2">
+            {weeklyChartData.map(col => {
+              const maxVal = 100;
+              const screenHeight = Math.min(100, Math.max(12, Math.round((col.browsingMins / maxVal) * 100)));
+              const offlineHeight = Math.min(100, Math.max(12, Math.round((col.offlineMins / maxVal) * 100)));
 
               return (
-                <div key={d.day} className="flex-1 flex flex-col items-center h-full justify-end group relative">
-                  <div className="absolute -top-10 opacity-0 group-hover:opacity-100 transition-opacity bg-slate-900 text-white text-[10px] px-2 py-1 rounded shadow pointer-events-none whitespace-nowrap z-10 font-mono">
-                    Browsing: {d.browsingMins}m • Offline: {d.offlineMins}m
+                <div key={col.day} className="flex-1 flex flex-col items-center gap-2 h-full justify-end">
+                  <div className="w-full flex items-end justify-center gap-1.5 h-32">
+                    {/* Screen time bar */}
+                    <div
+                      style={{ height: `${screenHeight}%` }}
+                      title={`Screen: ${col.browsingMins}m`}
+                      className="w-3 sm:w-4 rounded-t bg-stone-200 dark:bg-stone-700 transition-all duration-300"
+                    />
+                    {/* Offline time bar */}
+                    <div
+                      style={{ height: `${offlineHeight}%` }}
+                      title={`Offline: ${col.offlineMins}m`}
+                      className={`w-3 sm:w-4 rounded-t transition-all duration-300 ${
+                        col.isToday ? 'bg-sage-600' : 'bg-sage-500/70'
+                      }`}
+                    />
                   </div>
 
-                  <div className="flex items-end gap-1.5 w-full justify-center h-full pb-2">
-                    <div
-                      className="w-3 sm:w-4 bg-sky-400/80 hover:bg-sky-400 rounded-t-sm transition-all"
-                      style={{ height: `${browsingHeight}%` }}
-                    />
-                    <div
-                      className="w-3 sm:w-4 bg-emerald-400/90 hover:bg-emerald-400 rounded-t-sm transition-all"
-                      style={{ height: `${offlineHeight}%` }}
-                    />
-                  </div>
-                  <span className={`text-[11px] font-semibold mt-2 ${
-                    d.isToday ? 'text-indigo-500 font-bold' : 'text-slate-400'
+                  <span className={`text-[11px] font-mono tabular-nums ${
+                    col.isToday
+                      ? 'font-bold text-sage-600 dark:text-sage-400'
+                      : 'text-stone-400'
                   }`}>
-                    {d.day}
+                    {col.day}
                   </span>
                 </div>
               );
             })}
           </div>
-
-          <div className="pt-4 flex items-center justify-between text-xs text-slate-500 dark:text-slate-400">
-            <span>Scale: 0 to 120 minutes per day</span>
-            <span className="font-medium text-emerald-600 dark:text-emerald-400">
-              Today: {totalOfflineMins}m offline vs {Math.round(totalBrowsingSeconds / 60)}m browsing
-            </span>
-          </div>
         </section>
 
         {/* =========================================================================
-            SECTION 8: ACHIEVEMENTS & STREAK
-        ========================================================================= */}
-        <section
-          className={`p-6 sm:p-7 rounded-3xl border transition-all ${
-            isDarkMode
-              ? 'bg-[#131B2A] border-[#1F293D] shadow-subtle'
-              : 'bg-white border-slate-200/80 shadow-subtle'
-          }`}
-        >
-          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-6">
-            <div>
-              <div className="flex items-center gap-2 mb-1">
-                <Award className="w-4 h-4 text-indigo-500" />
-                <h3 className="text-base font-semibold text-slate-900 dark:text-white tracking-tight">
-                  Milestones & Badges
-                </h3>
-                <span className="text-xs px-2.5 py-0.5 rounded-full bg-indigo-50 dark:bg-indigo-950/60 text-indigo-600 dark:text-indigo-300 border border-indigo-100 dark:border-indigo-800/50 font-semibold font-mono">
-                  {unlockedAchievements.length} of {data.achievements.length} Unlocked
-                </span>
-              </div>
-              <p className="text-xs text-slate-500 dark:text-slate-400">
-                Earned strictly through genuine screen boundaries and mindful time.
-              </p>
-            </div>
-
-            <div className="flex items-center gap-2 bg-amber-50 dark:bg-amber-950/60 text-amber-700 dark:text-amber-300 border border-amber-200/60 px-3.5 py-1.5 rounded-2xl text-xs font-semibold">
-              <Flame className="w-4 h-4 fill-current text-amber-500" />
-              <span>Active Mindful Streak Active</span>
-            </div>
-          </div>
-
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3.5">
-            {data.achievements.map(ach => (
-              <div
-                key={ach.id}
-                className={`p-4 rounded-2xl border transition-all ${
-                  ach.unlocked
-                    ? isDarkMode
-                      ? 'bg-slate-800/40 border-indigo-900/50 text-white'
-                      : 'bg-white border-indigo-100 shadow-sm text-slate-900'
-                    : isDarkMode
-                    ? 'bg-slate-900/60 border-slate-800/60 opacity-50 text-slate-400'
-                    : 'bg-slate-50/50 border-slate-100 opacity-60 text-slate-500'
-                }`}
-              >
-                <div className="flex items-center gap-3 mb-2">
-                  <div className={`p-2 rounded-xl ${
-                    ach.unlocked
-                      ? 'bg-indigo-50 dark:bg-indigo-950/80 text-indigo-500'
-                      : 'bg-slate-200/60 dark:bg-slate-800 text-slate-400'
-                  }`}>
-                    {getAchievementIcon(ach.id)}
-                  </div>
-                  <div>
-                    <h4 className="text-xs font-bold tracking-tight">{ach.name}</h4>
-                    <span className="text-[10px] text-slate-400 font-mono">
-                      {ach.unlocked ? 'Unlocked ✓' : 'In Progress'}
-                    </span>
-                  </div>
-                </div>
-                <p className="text-[11px] text-slate-500 dark:text-slate-400 leading-relaxed">
-                  {ach.description}
-                </p>
-              </div>
-            ))}
-          </div>
-        </section>
-
-        {/* =========================================================================
-            SECTION 9: WEATHER & DISCOVER (Open-Meteo Integration + Plan Activity)
+            SECTION 6: WEATHER & DISCOVER
         ========================================================================= */}
         <section
           id="section-discover"
-          className={`p-6 sm:p-7 rounded-3xl border transition-all ${
+          className={`rounded-xl p-6 border transition-colors ${
             isDarkMode
-              ? 'bg-[#131B2A] border-[#1F293D] shadow-subtle'
-              : 'bg-white border-slate-200/80 shadow-subtle'
+              ? 'bg-[#191B1F] border-[#282A30]'
+              : 'bg-[#FFFFFF] border-[#E8E7E3] shadow-subtle'
           }`}
         >
-          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-6">
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-4 border-b border-stone-100 dark:border-stone-800 mb-5">
             <div>
-              <div className="flex items-center gap-2 mb-1">
-                <CloudSun className="w-4 h-4 text-indigo-500" />
-                <h3 className="text-base font-semibold text-slate-900 dark:text-white tracking-tight">
-                  Weather & Offline Suggestions
-                </h3>
-                <span className="text-xs px-2.5 py-0.5 rounded-full bg-emerald-50 dark:bg-emerald-950/60 text-emerald-600 dark:text-emerald-300 border border-emerald-100 dark:border-emerald-800/50 font-semibold font-mono">
-                  Open-Meteo Live
-                </span>
-              </div>
-              <p className="text-xs text-slate-500 dark:text-slate-400">
-                Real atmospheric conditions calibrated to meaningful real-world offline activities.
+              <h3 className="text-sm font-semibold tracking-tight text-stone-900 dark:text-stone-100">
+                Weather & Offline Suggestions
+              </h3>
+              <p className="text-xs text-stone-500 dark:text-stone-400 mt-0.5">
+                Real atmospheric conditions calibrated to meaningful offline activities.
               </p>
             </div>
 
-            <button
-              onClick={handleRefreshWeather}
-              title="Refresh weather from Open-Meteo"
-              className={`flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-semibold border transition-all cursor-pointer ${
-                isDarkMode
-                  ? 'bg-slate-800 hover:bg-slate-700 text-slate-200 border-slate-700'
-                  : 'bg-slate-50 hover:bg-slate-100 text-slate-700 border-slate-200'
-              }`}
-            >
-              <RotateCcw className="w-3.5 h-3.5" /> Refresh
-            </button>
+            <div className="flex items-center gap-3">
+              {formattedWeather && (
+                <div className="flex items-center gap-3 text-xs text-stone-500">
+                  <span className="flex items-center gap-1">
+                    <span className="text-base select-none">{formattedWeather.emoji}</span>
+                    <span className="font-mono font-medium text-stone-900 dark:text-stone-100">
+                      {formattedWeather.temperatureText}
+                    </span>
+                    <span>{formattedWeather.description}</span>
+                  </span>
+                  <span className="text-stone-300 dark:text-stone-700">•</span>
+                  <span className="flex items-center gap-1">
+                    <Droplets className="w-3.5 h-3.5 text-stone-400" /> {formattedWeather.humidity}%
+                  </span>
+                  <span className="flex items-center gap-1">
+                    <Wind className="w-3.5 h-3.5 text-stone-400" /> {formattedWeather.windSpeed} km/h
+                  </span>
+                </div>
+              )}
+
+              <button
+                onClick={handleRefreshWeather}
+                title="Refresh live weather"
+                className="p-1.5 rounded-lg border border-stone-200 dark:border-stone-700 hover:bg-stone-50 dark:hover:bg-stone-800 text-stone-500 transition-colors cursor-pointer"
+              >
+                <CloudSun className="w-3.5 h-3.5" />
+              </button>
+            </div>
           </div>
 
-          {/* Current Weather Card */}
-          {formattedWeather && (
-            <div className={`p-4 rounded-2xl mb-6 flex flex-wrap items-center justify-between gap-4 ${
-              isDarkMode ? 'bg-slate-800/40 border border-slate-700' : 'bg-slate-50 border border-slate-200/80'
-            }`}>
-              <div className="flex items-center gap-3">
-                <span className="text-3xl">{formattedWeather.emoji}</span>
-                <div>
-                  <div className="text-lg font-bold text-slate-900 dark:text-white flex items-center gap-2">
-                    {formattedWeather.temperatureText} • {formattedWeather.description}
-                  </div>
-                  <div className="text-xs text-slate-400">
-                    {formattedWeather.locationText} • Humidity: {formattedWeather.humidity}% • Wind: {formattedWeather.windSpeed} km/h
-                  </div>
-                </div>
-              </div>
-
-              <div className="text-xs px-3 py-1.5 rounded-xl bg-white dark:bg-slate-800 text-slate-600 dark:text-slate-300 border border-slate-200/60 dark:border-slate-700 font-medium">
-                {formattedWeather.isSafeForOutdoors ? '🌱 Great weather for outdoor presence' : '🏡 Indoor mindful options recommended'}
-              </div>
-            </div>
-          )}
-
-          {/* Weather-Calibrated Offline Recommendations */}
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
             {recommendations.map(rec => {
               const alreadyPlanned = userActivities.some(
                 a => a.title.toLowerCase() === rec.title.toLowerCase()
@@ -1293,51 +1029,47 @@ export const Dashboard: React.FC = () => {
               return (
                 <div
                   key={rec.id}
-                  className={`p-5 rounded-2xl border flex flex-col justify-between transition-all ${
+                  className={`p-4 rounded-lg border flex flex-col justify-between transition-colors ${
                     isDarkMode
-                      ? 'bg-slate-800/30 border-slate-700/80 hover:border-slate-600'
-                      : 'bg-white border-slate-200/80 hover:border-slate-300 shadow-subtle'
+                      ? 'bg-[#121316]/50 border-[#282A30]'
+                      : 'bg-[#FAF9F6] border-[#EAE9E4]'
                   }`}
                 >
                   <div>
-                    <div className="flex items-center justify-between mb-3">
-                      <span className="px-2.5 py-0.5 rounded-full text-[10px] font-semibold bg-indigo-50 text-indigo-700 dark:bg-indigo-950/60 dark:text-indigo-300 border border-indigo-200/50 dark:border-indigo-800/40">
-                        Offline Activity
+                    <div className="flex items-center justify-between mb-2">
+                      <span className="font-mono text-[11px] tabular-nums text-stone-400">
+                        {rec.durationMinutes}m offline
                       </span>
-                      <span className="text-[11px] font-mono text-slate-400 font-semibold">
-                        {rec.durationMinutes}m
+                      <span className="text-[10px] text-stone-400 italic">
+                        {rec.weatherTag}
                       </span>
                     </div>
 
-                    <h4 className="text-sm font-bold text-slate-900 dark:text-white mb-1.5">
+                    <h4 className="text-xs font-semibold text-stone-900 dark:text-stone-100 mb-1">
                       {rec.title}
                     </h4>
-                    <p className="text-xs text-slate-500 dark:text-slate-400 leading-relaxed mb-4">
+                    <p className="text-[11px] text-stone-500 dark:text-stone-400 leading-relaxed">
                       {rec.description}
                     </p>
                   </div>
 
-                  <div className="pt-3 border-t border-slate-100 dark:border-slate-800 flex items-center justify-between">
-                    <span className="text-[11px] text-slate-400 italic">
-                      {rec.weatherTag}
-                    </span>
-
+                  <div className="pt-3 mt-3 border-t border-stone-200/60 dark:border-stone-800 flex justify-end">
                     <button
                       onClick={() => handleAddWeatherActivity(rec)}
                       disabled={alreadyPlanned}
-                      className={`flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-bold transition-all cursor-pointer ${
+                      className={`flex items-center gap-1 px-3 py-1 rounded-md text-xs font-medium transition-colors cursor-pointer ${
                         alreadyPlanned
-                          ? 'bg-emerald-50 text-emerald-700 border border-emerald-200/60 dark:bg-emerald-950/40 dark:text-emerald-300 cursor-default'
-                          : 'bg-indigo-50 hover:bg-indigo-100 text-indigo-700 border border-indigo-200 dark:bg-indigo-950/60 dark:hover:bg-indigo-900/80 dark:text-indigo-300'
+                          ? 'bg-sage-100 text-sage-800 dark:bg-sage-950 dark:text-sage-300 cursor-default'
+                          : 'bg-sage-600 hover:bg-sage-700 text-white shadow-subtle'
                       }`}
                     >
                       {alreadyPlanned ? (
                         <>
-                          <Check className="w-3.5 h-3.5" /> Planned
+                          <Check className="w-3 h-3" /> Planned
                         </>
                       ) : (
                         <>
-                          <Plus className="w-3.5 h-3.5" /> Plan Activity
+                          <Plus className="w-3 h-3" /> Plan Activity
                         </>
                       )}
                     </button>
@@ -1349,306 +1081,383 @@ export const Dashboard: React.FC = () => {
         </section>
 
         {/* =========================================================================
-            SECTION 10: QUICK ACTIONS & PLEDGES & USER-ENTERED ACTIVITIES
+            SECTION 7: PLEDGES & PLANNED ACTIVITIES (Interactive Checklist)
         ========================================================================= */}
-        <section className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-          {/* Active Pledges & Commitments */}
-          <div className={`p-6 sm:p-7 rounded-3xl border transition-all ${
-            isDarkMode
-              ? 'bg-[#131B2A] border-[#1F293D] shadow-subtle'
-              : 'bg-white border-slate-200/80 shadow-subtle'
-          }`}>
-            <div className="flex items-center justify-between mb-4">
+        <section className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+          {/* Pledges */}
+          <div
+            className={`rounded-xl p-6 border transition-colors ${
+              isDarkMode
+                ? 'bg-[#191B1F] border-[#282A30]'
+                : 'bg-[#FFFFFF] border-[#E8E7E3] shadow-subtle'
+            }`}
+          >
+            <div className="flex items-center justify-between pb-3 border-b border-stone-100 dark:border-stone-800 mb-4">
               <div>
-                <h3 className="text-base font-semibold text-slate-900 dark:text-white tracking-tight flex items-center gap-2">
-                  <Heart className="w-4 h-4 text-rose-500" />
-                  Pledges & Intentions
+                <h3 className="text-sm font-semibold tracking-tight text-stone-900 dark:text-stone-100">
+                  Detox Pledges
                 </h3>
-                <p className="text-xs text-slate-500 dark:text-slate-400">
-                  Voluntary boundaries to cultivate intentional living.
+                <p className="text-xs text-stone-500 dark:text-stone-400 mt-0.5">
+                  Personal commitments to screen-free boundaries.
                 </p>
               </div>
 
               <button
                 onClick={() => setShowPledgeForm(!showPledgeForm)}
-                className="px-3 py-1.5 rounded-xl text-xs font-bold bg-indigo-50 text-indigo-700 border border-indigo-200 dark:bg-indigo-950/60 dark:text-indigo-300 cursor-pointer flex items-center gap-1"
+                className="flex items-center gap-1 px-2.5 py-1 text-xs font-medium rounded-lg border border-stone-200 dark:border-stone-700 hover:bg-stone-50 dark:hover:bg-stone-800 transition-colors cursor-pointer"
               >
-                <Plus className="w-3.5 h-3.5" /> {showPledgeForm ? 'Close' : 'New Pledge'}
+                <Plus className="w-3.5 h-3.5" /> {showPledgeForm ? 'Cancel' : 'New'}
               </button>
             </div>
 
-            {/* Pledge Creation Form */}
             {showPledgeForm && (
-              <form onSubmit={handleCreatePledgeSubmit} className="p-4 mb-4 rounded-2xl bg-slate-50 dark:bg-slate-800/40 border border-slate-200 dark:border-slate-700 space-y-3">
+              <form onSubmit={handleCreatePledgeSubmit} className="mb-3 p-3 rounded-lg border border-stone-200 dark:border-stone-700 space-y-2 bg-[#FAF9F6] dark:bg-[#121316]">
                 <input
                   type="text"
                   placeholder="e.g. No screens during evening dinner"
                   value={pledgeTitle}
                   onChange={e => setPledgeTitle(e.target.value)}
-                  className={`w-full px-3 py-2 text-xs rounded-xl border focus:outline-none ${
-                    isDarkMode ? 'bg-slate-800 border-slate-700 text-white' : 'bg-white border-slate-200 text-slate-900'
+                  className={`w-full px-2.5 py-1.5 text-xs rounded-md border outline-none ${
+                    isDarkMode ? 'bg-[#191B1F] border-[#282A30] text-white focus:border-sage-500' : 'bg-white border-stone-200 text-stone-900 focus:border-sage-600'
                   }`}
+                  autoFocus
                 />
                 <div className="flex items-center gap-2">
                   <div className="flex items-center gap-1.5 flex-1">
-                    <span className="text-[11px] text-slate-400">Target:</span>
+                    <span className="text-[11px] text-stone-400">Target:</span>
                     <input
                       type="number"
                       min="5"
                       max="180"
                       value={pledgeTargetMins}
                       onChange={e => setPledgeTargetMins(parseInt(e.target.value) || 30)}
-                      className={`w-20 px-2 py-1.5 text-xs font-mono rounded-xl border focus:outline-none ${
-                        isDarkMode ? 'bg-slate-800 border-slate-700 text-white' : 'bg-white border-slate-200 text-slate-900'
+                      className={`w-20 px-2 py-1 text-xs font-mono tabular-nums rounded-md border outline-none ${
+                        isDarkMode ? 'bg-[#191B1F] border-[#282A30] text-white' : 'bg-white border-stone-200 text-stone-900'
                       }`}
                     />
-                    <span className="text-[11px] text-slate-400">mins</span>
+                    <span className="text-[11px] text-stone-400">mins</span>
                   </div>
                   <button
                     type="submit"
-                    className="px-4 py-1.5 text-xs font-bold rounded-xl bg-indigo-500 hover:bg-indigo-600 text-white cursor-pointer"
+                    className="px-4 py-1.5 text-xs font-medium rounded-md bg-sage-600 hover:bg-sage-700 text-white cursor-pointer transition-colors shadow-subtle"
                   >
-                    Commit
+                    Save Pledge
                   </button>
                 </div>
               </form>
             )}
 
-            <div className="space-y-3">
+            <div className="space-y-1.5">
               {present.pledges.map(p => (
                 <div
                   key={p.id}
-                  className="p-3.5 rounded-2xl bg-slate-50 dark:bg-slate-800/40 border border-slate-100 dark:border-slate-800 flex items-center justify-between"
+                  className={`flex items-center justify-between p-2.5 rounded-lg border transition-colors ${
+                    isDarkMode ? 'bg-[#121316]/50 border-[#282A30]' : 'bg-[#FAF9F6] border-[#EFEFEA]'
+                  }`}
                 >
-                  <div className="flex items-center gap-3">
-                    <span className="w-2 h-2 rounded-full bg-indigo-500 shrink-0" />
-                    <span className="text-xs font-medium text-slate-800 dark:text-slate-200">
+                  <div className="flex items-center gap-2">
+                    <span className="w-1.5 h-1.5 rounded-full bg-sage-500" />
+                    <span className="text-xs font-medium text-stone-800 dark:text-stone-200">
                       {p.title}
                     </span>
                   </div>
-                  <span className="text-xs font-mono text-slate-400">
+                  <span className="font-mono text-[11px] tabular-nums text-stone-400">
                     {p.targetMinutes}m target
                   </span>
                 </div>
               ))}
+              {present.pledges.length === 0 && (
+                <p className="text-xs text-stone-400 italic py-2 text-center">No pledges active.</p>
+              )}
             </div>
           </div>
 
-          {/* Planned Offline Activities - Purely user-entered & freely untickable */}
-          <div className={`p-6 sm:p-7 rounded-3xl border transition-all ${
-            isDarkMode
-              ? 'bg-[#131B2A] border-[#1F293D] shadow-subtle'
-              : 'bg-white border-slate-200/80 shadow-subtle'
-          }`}>
-            <div className="flex items-center justify-between mb-4">
+          {/* Planned Offline Activities */}
+          <div
+            className={`rounded-xl p-6 border transition-colors ${
+              isDarkMode
+                ? 'bg-[#191B1F] border-[#282A30]'
+                : 'bg-[#FFFFFF] border-[#E8E7E3] shadow-subtle'
+            }`}
+          >
+            <div className="flex items-center justify-between pb-3 border-b border-stone-100 dark:border-stone-800 mb-4">
               <div>
-                <h3 className="text-base font-semibold text-slate-900 dark:text-white tracking-tight flex items-center gap-2">
-                  <Calendar className="w-4 h-4 text-emerald-500" />
+                <h3 className="text-sm font-semibold tracking-tight text-stone-900 dark:text-stone-100">
                   Planned Offline Activities
                 </h3>
-                <p className="text-xs text-slate-500 dark:text-slate-400">
-                  Purely user-entered. Tick or untick anytime to update offline credit.
+                <p className="text-xs text-stone-500 dark:text-stone-400 mt-0.5">
+                  Check off real offline actions as you complete them.
                 </p>
               </div>
 
               <button
                 onClick={() => setShowActivityForm(!showActivityForm)}
-                className="px-3 py-1.5 rounded-xl text-xs font-bold bg-emerald-50 text-emerald-700 border border-emerald-200 dark:bg-emerald-950/60 dark:text-emerald-300 cursor-pointer flex items-center gap-1"
+                className="flex items-center gap-1 px-2.5 py-1 text-xs font-medium rounded-lg border border-stone-200 dark:border-stone-700 hover:bg-stone-50 dark:hover:bg-stone-800 transition-colors cursor-pointer"
               >
-                <Plus className="w-3.5 h-3.5" /> {showActivityForm ? 'Close' : 'Add Activity'}
+                <Plus className="w-3.5 h-3.5" /> {showActivityForm ? 'Cancel' : 'New'}
               </button>
             </div>
 
-            {/* Custom Activity Creation Form */}
             {showActivityForm && (
-              <form onSubmit={handleAddCustomActivity} className="p-4 mb-4 rounded-2xl bg-slate-50 dark:bg-slate-800/40 border border-slate-200 dark:border-slate-700 space-y-3">
+              <form onSubmit={handleAddCustomActivity} className="mb-3 p-3 rounded-lg border border-stone-200 dark:border-stone-700 space-y-2 bg-[#FAF9F6] dark:bg-[#121316]">
                 <input
                   type="text"
-                  placeholder="e.g. Park walk with sketchbook, Evening meditation"
+                  placeholder="e.g. Read paperback book chapters"
                   value={activityTitle}
                   onChange={e => setActivityTitle(e.target.value)}
-                  className={`w-full px-3 py-2 text-xs rounded-xl border focus:outline-none ${
-                    isDarkMode ? 'bg-slate-800 border-slate-700 text-white' : 'bg-white border-slate-200 text-slate-900'
+                  className={`w-full px-2.5 py-1.5 text-xs rounded-md border outline-none ${
+                    isDarkMode ? 'bg-[#191B1F] border-[#282A30] text-white focus:border-sage-500' : 'bg-white border-stone-200 text-stone-900 focus:border-sage-600'
                   }`}
+                  autoFocus
                 />
                 <div className="flex items-center gap-2">
                   <div className="flex items-center gap-1.5 flex-1">
-                    <span className="text-[11px] text-slate-400">Duration:</span>
+                    <span className="text-[11px] text-stone-400">Duration:</span>
                     <input
                       type="number"
                       min="5"
                       max="180"
                       value={activityDuration}
                       onChange={e => setActivityDuration(parseInt(e.target.value) || 30)}
-                      className={`w-20 px-2 py-1.5 text-xs font-mono rounded-xl border focus:outline-none ${
-                        isDarkMode ? 'bg-slate-800 border-slate-700 text-white' : 'bg-white border-slate-200 text-slate-900'
+                      className={`w-20 px-2 py-1 text-xs font-mono tabular-nums rounded-md border outline-none ${
+                        isDarkMode ? 'bg-[#191B1F] border-[#282A30] text-white' : 'bg-white border-stone-200 text-stone-900'
                       }`}
                     />
-                    <span className="text-[11px] text-slate-400">mins</span>
+                    <span className="text-[11px] text-stone-400">mins</span>
                   </div>
                   <button
                     type="submit"
-                    className="px-4 py-1.5 text-xs font-bold rounded-xl bg-emerald-500 hover:bg-emerald-600 text-white cursor-pointer"
+                    className="px-4 py-1.5 text-xs font-medium rounded-md bg-sage-600 hover:bg-sage-700 text-white cursor-pointer transition-colors shadow-subtle"
                   >
-                    Save
+                    Save Activity
                   </button>
                 </div>
               </form>
             )}
 
-            <div className="space-y-3">
+            <div className="space-y-1.5 max-h-72 overflow-y-auto pr-0.5">
               {userActivities.map(act => (
                 <div
                   key={act.id}
-                  className={`p-3.5 rounded-2xl border flex items-center justify-between transition-all ${
+                  className={`flex items-center justify-between p-2.5 rounded-lg border transition-colors ${
                     act.completed
                       ? isDarkMode
-                        ? 'bg-emerald-950/30 border-emerald-900/40 opacity-75'
-                        : 'bg-emerald-50/50 border-emerald-100 opacity-80'
+                        ? 'bg-sage-950/20 border-sage-900/30 text-stone-500 opacity-60'
+                        : 'bg-sage-50/40 border-sage-100 text-stone-400 opacity-70'
                       : isDarkMode
-                      ? 'bg-slate-800/40 border-slate-800'
-                      : 'bg-slate-50 border-slate-100'
+                      ? 'bg-[#121316]/50 border-[#282A30]'
+                      : 'bg-[#FAF9F6] border-[#EFEFEA]'
                   }`}
                 >
-                  <div className="flex items-center gap-3">
+                  <div className="flex items-center gap-2.5 min-w-0">
                     <button
                       type="button"
                       onClick={() => handleCompleteActivity(act.id)}
-                      title={act.completed ? 'Click to untick activity' : 'Click to mark as completed'}
-                      className={`w-5 h-5 rounded-lg border flex items-center justify-center cursor-pointer transition-all ${
-                        act.completed
-                          ? 'bg-emerald-500 border-emerald-500 text-white shadow-sm'
-                          : 'border-slate-300 dark:border-slate-600 hover:border-emerald-500 bg-white dark:bg-slate-800'
-                      }`}
+                      title={act.completed ? 'Untick activity' : 'Mark completed'}
+                      className="cursor-pointer text-sage-600 hover:text-sage-700 transition-colors"
                     >
-                      {act.completed && <Check className="w-3.5 h-3.5" />}
+                      {act.completed ? (
+                        <CheckCircle className="w-4 h-4 text-sage-600" />
+                      ) : (
+                        <Circle className="w-4 h-4 text-stone-300 hover:text-sage-600" />
+                      )}
                     </button>
-                    <div>
-                      <span className={`text-xs font-medium block ${act.completed ? 'line-through text-slate-400' : 'text-slate-800 dark:text-slate-200'}`}>
+                    <div className="min-w-0">
+                      <span className={`text-xs font-medium block truncate ${act.completed ? 'line-through text-stone-400' : 'text-stone-800 dark:text-stone-200'}`}>
                         {act.title}
                       </span>
-                      <span className="text-[10px] text-slate-400 font-mono">
-                        +{act.durationMinutes} mins offline credit {act.completed ? '(earned ✓)' : ''}
+                      <span className="font-mono text-[10px] tabular-nums text-stone-400">
+                        +{act.durationMinutes}m offline credit
                       </span>
                     </div>
                   </div>
 
-                  <div className="flex items-center gap-2">
-                    <button
-                      type="button"
-                      onClick={() => handleRemoveActivity(act.id)}
-                      title="Delete activity"
-                      className="p-1 text-slate-400 hover:text-rose-500 rounded-lg transition-colors cursor-pointer"
-                    >
-                      <Trash2 className="w-3.5 h-3.5" />
-                    </button>
-                  </div>
+                  <button
+                    type="button"
+                    onClick={() => handleRemoveActivity(act.id)}
+                    title="Delete activity"
+                    className="p-1 text-stone-400 hover:text-rose-600 transition-colors cursor-pointer"
+                  >
+                    <Trash2 className="w-3.5 h-3.5" />
+                  </button>
                 </div>
               ))}
 
               {userActivities.length === 0 && (
-                <div className="py-8 text-center text-xs text-slate-400 italic">
-                  No planned activities yet. Click "+ Add Activity" above or "+ Plan Activity" under Weather & Discover.
-                </div>
+                <p className="text-xs text-stone-400 italic py-2 text-center">
+                  No planned activities yet.
+                </p>
               )}
             </div>
           </div>
         </section>
 
+        {/* =========================================================================
+            SECTION 8: ACHIEVEMENTS & MILESTONES
+        ========================================================================= */}
+        <section
+          id="section-profile"
+          className={`rounded-xl p-6 border transition-colors ${
+            isDarkMode
+              ? 'bg-[#191B1F] border-[#282A30]'
+              : 'bg-[#FFFFFF] border-[#E8E7E3] shadow-subtle'
+          }`}
+        >
+          <div className="flex items-center justify-between pb-4 border-b border-stone-100 dark:border-stone-800 mb-5">
+            <div>
+              <h3 className="text-sm font-semibold tracking-tight text-stone-900 dark:text-stone-100">
+                Milestones & Achievements
+              </h3>
+              <p className="text-xs text-stone-500 dark:text-stone-400 mt-0.5">
+                Earned through genuine verified offline presence.
+              </p>
+            </div>
+
+            <span className="font-mono text-xs tabular-nums px-2.5 py-1 rounded bg-stone-100 dark:bg-stone-800 text-stone-700 dark:text-stone-300 border border-stone-200 dark:border-stone-700">
+              {unlockedAchievements.length} of {data.achievements.length} Unlocked
+            </span>
+          </div>
+
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
+            {data.achievements.map(ach => (
+              <div
+                key={ach.id}
+                className={`p-3.5 rounded-lg border transition-colors ${
+                  ach.unlocked
+                    ? isDarkMode
+                      ? 'bg-[#121316]/60 border-sage-900/50'
+                      : 'bg-[#FAF9F6] border-sage-200/60'
+                    : isDarkMode
+                    ? 'bg-[#121316]/20 border-[#282A30]/50 opacity-45'
+                    : 'bg-[#F9F8F5] border-[#EFEFEA] opacity-50'
+                }`}
+              >
+                <div className="flex items-center gap-2.5 mb-2">
+                  <div
+                    className={`p-1.5 rounded-md ${
+                      ach.unlocked
+                        ? 'bg-sage-100 text-sage-700 dark:bg-sage-950 dark:text-sage-300'
+                        : 'bg-stone-200/50 text-stone-400 dark:bg-stone-800'
+                    }`}
+                  >
+                    {getAchievementIcon(ach.id)}
+                  </div>
+                  <div className="min-w-0">
+                    <h4 className="text-xs font-medium truncate">{ach.name}</h4>
+                    <span className="font-mono text-[10px] tabular-nums text-stone-400">
+                      {ach.unlocked ? 'Unlocked ✓' : `${ach.progress}% progress`}
+                    </span>
+                  </div>
+                </div>
+
+                <p className="text-[11px] text-stone-500 dark:text-stone-400 leading-relaxed mb-2.5 line-clamp-2">
+                  {ach.description}
+                </p>
+
+                <div className="w-full bg-stone-200/60 dark:bg-stone-800 rounded-full h-1 overflow-hidden">
+                  <div
+                    className={`h-full transition-all duration-500 ${
+                      ach.unlocked ? 'bg-sage-600' : 'bg-stone-400'
+                    }`}
+                    style={{ width: `${ach.progress}%` }}
+                  />
+                </div>
+              </div>
+            ))}
+          </div>
+        </section>
+
         {/* Footer */}
-        <footer className={`pt-6 pb-12 text-center text-xs border-t transition-colors ${
-          isDarkMode ? 'border-slate-800/80 text-slate-500' : 'border-slate-200/80 text-slate-400'
+        <footer className={`pt-6 pb-2 text-center text-xs border-t transition-colors ${
+          isDarkMode ? 'border-[#282A30] text-stone-500' : 'border-[#E8E7E3] text-stone-400'
         }`}>
-          <p className="font-semibold text-slate-500 dark:text-slate-400">
+          <p className="font-medium">
             tabzero. — Digital Wellness Browser Extension
           </p>
           <p className="mt-1">
             Life happens beyond the screen. Scroll less. Live more.
           </p>
-          <p className="mt-1 text-[11px] text-slate-400 dark:text-slate-500">
-            IEEE Computer Society Hackathon • Team CodeNova • Manifest V3 Compliant
-          </p>
         </footer>
       </div>
 
       {/* =========================================================================
-          BOTTOM NAVIGATION (Home, Focus, Discover, Progress, Profile)
+          BOTTOM NAVIGATION (5 Sections: Home, Focus, Discover, Progress, Profile)
       ========================================================================= */}
       <nav
-        className={`fixed bottom-4 left-1/2 -translate-x-1/2 z-50 px-3 py-2 rounded-2xl border shadow-card backdrop-blur-xl transition-all duration-300 flex items-center gap-1 sm:gap-2 ${
+        className={`fixed bottom-4 left-1/2 -translate-x-1/2 z-50 px-3 py-1.5 rounded-xl border shadow-card backdrop-blur-md transition-colors flex items-center gap-1 ${
           isDarkMode
-            ? 'bg-[#131B2A]/90 border-[#1F293D] text-slate-400 shadow-[0_8px_30px_rgb(0,0,0,0.4)]'
-            : 'bg-white/90 border-slate-200/90 text-slate-600 shadow-[0_8px_30px_rgb(0,0,0,0.08)]'
+            ? 'bg-[#191B1F]/90 border-[#282A30] text-stone-400'
+            : 'bg-white/90 border-[#E8E7E3] text-stone-600'
         }`}
       >
         <button
           onClick={() => scrollToSection('section-overview', 'home')}
-          className={`flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-semibold transition-all cursor-pointer ${
+          className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium transition-colors cursor-pointer ${
             activeNav === 'home'
               ? isDarkMode
-                ? 'bg-slate-800 text-white'
-                : 'bg-slate-100 text-slate-900 font-bold'
-              : 'hover:text-slate-900 dark:hover:text-white'
+                ? 'bg-[#282A30] text-white'
+                : 'bg-stone-100 text-stone-900 font-semibold'
+              : 'hover:text-stone-900 dark:hover:text-white'
           }`}
         >
-          <Home className="w-4 h-4" />
-          <span className="hidden sm:inline">Home</span>
+          <Home className="w-3.5 h-3.5" />
+          <span>Home</span>
         </button>
 
         <button
           onClick={() => scrollToSection('section-focus', 'focus')}
-          className={`flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-semibold transition-all cursor-pointer ${
+          className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium transition-colors cursor-pointer ${
             activeNav === 'focus'
               ? isDarkMode
-                ? 'bg-slate-800 text-white'
-                : 'bg-slate-100 text-slate-900 font-bold'
-              : 'hover:text-slate-900 dark:hover:text-white'
+                ? 'bg-[#282A30] text-white'
+                : 'bg-stone-100 text-stone-900 font-semibold'
+              : 'hover:text-stone-900 dark:hover:text-white'
           }`}
         >
-          <Target className="w-4 h-4" />
-          <span className="hidden sm:inline">Focus</span>
+          <Clock className="w-3.5 h-3.5" />
+          <span>Focus</span>
         </button>
 
         <button
           onClick={() => scrollToSection('section-discover', 'discover')}
-          className={`flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-semibold transition-all cursor-pointer ${
+          className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium transition-colors cursor-pointer ${
             activeNav === 'discover'
               ? isDarkMode
-                ? 'bg-slate-800 text-white'
-                : 'bg-slate-100 text-slate-900 font-bold'
-              : 'hover:text-slate-900 dark:hover:text-white'
+                ? 'bg-[#282A30] text-white'
+                : 'bg-stone-100 text-stone-900 font-semibold'
+              : 'hover:text-stone-900 dark:hover:text-white'
           }`}
         >
-          <Compass className="w-4 h-4" />
-          <span className="hidden sm:inline">Discover</span>
+          <CloudSun className="w-3.5 h-3.5" />
+          <span>Discover</span>
         </button>
 
         <button
           onClick={() => scrollToSection('section-progress', 'progress')}
-          className={`flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-semibold transition-all cursor-pointer ${
+          className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium transition-colors cursor-pointer ${
             activeNav === 'progress'
               ? isDarkMode
-                ? 'bg-slate-800 text-white'
-                : 'bg-slate-100 text-slate-900 font-bold'
-              : 'hover:text-slate-900 dark:hover:text-white'
+                ? 'bg-[#282A30] text-white'
+                : 'bg-stone-100 text-stone-900 font-semibold'
+              : 'hover:text-stone-900 dark:hover:text-white'
           }`}
         >
-          <BarChart2 className="w-4 h-4" />
-          <span className="hidden sm:inline">Progress</span>
+          <BarChart2 className="w-3.5 h-3.5" />
+          <span>Progress</span>
         </button>
 
         <button
-          onClick={() => scrollToSection('section-restrictions', 'profile')}
-          className={`flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-semibold transition-all cursor-pointer ${
+          onClick={() => scrollToSection('section-profile', 'profile')}
+          className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium transition-colors cursor-pointer ${
             activeNav === 'profile'
               ? isDarkMode
-                ? 'bg-slate-800 text-white'
-                : 'bg-slate-100 text-slate-900 font-bold'
-              : 'hover:text-slate-900 dark:hover:text-white'
+                ? 'bg-[#282A30] text-white'
+                : 'bg-stone-100 text-stone-900 font-semibold'
+              : 'hover:text-stone-900 dark:hover:text-white'
           }`}
         >
-          <Shield className="w-4 h-4" />
-          <span className="hidden sm:inline">Profile</span>
+          <Award className="w-3.5 h-3.5" />
+          <span>Profile</span>
         </button>
       </nav>
     </div>

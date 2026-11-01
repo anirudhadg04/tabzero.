@@ -28,39 +28,39 @@ const NatureAmbientCanvas: React.FC<{ isDark: boolean }> = ({ isDark }) => {
     window.addEventListener('resize', handleResize);
 
     // Drifting foliage leaves floating across the landscape
-    const leafCount = 28;
+    const leafCount = 24;
     const leaves = Array.from({ length: leafCount }, () => ({
       x: Math.random() * width,
       y: Math.random() * height,
-      size: 5 + Math.random() * 7,
-      speedX: 0.9 + Math.random() * 1.6,
-      speedY: 0.2 + Math.random() * 0.7,
+      size: 5 + Math.random() * 6,
+      speedX: 0.8 + Math.random() * 1.4,
+      speedY: 0.2 + Math.random() * 0.6,
       rotation: Math.random() * Math.PI * 2,
-      rotSpeed: (Math.random() - 0.5) * 0.035,
+      rotSpeed: (Math.random() - 0.5) * 0.03,
       wobble: Math.random() * Math.PI * 2,
       wobbleSpeed: 0.02 + Math.random() * 0.03,
-      opacity: 0.4 + Math.random() * 0.45,
+      opacity: 0.35 + Math.random() * 0.4,
     }));
 
     // Twinkling stars in the night sky (active in dark mode)
-    const starCount = 35;
+    const starCount = 30;
     const stars = Array.from({ length: starCount }, () => ({
       x: Math.random() * width,
       y: Math.random() * (height * 0.55),
-      size: 0.8 + Math.random() * 1.8,
+      size: 0.8 + Math.random() * 1.5,
       pulse: Math.random() * Math.PI * 2,
-      pulseSpeed: 0.02 + Math.random() * 0.04,
-      maxOpacity: 0.4 + Math.random() * 0.55,
+      pulseSpeed: 0.02 + Math.random() * 0.03,
+      maxOpacity: 0.35 + Math.random() * 0.45,
     }));
 
     // Gentle sunbeam / dust particles in daylight
-    const dustCount = 25;
+    const dustCount = 20;
     const dustMotes = Array.from({ length: dustCount }, () => ({
       x: Math.random() * width,
       y: Math.random() * height,
-      size: 1.2 + Math.random() * 2,
-      speedX: 0.3 + Math.random() * 0.6,
-      speedY: -0.2 + Math.random() * 0.4,
+      size: 1.2 + Math.random() * 1.8,
+      speedX: 0.25 + Math.random() * 0.5,
+      speedY: -0.15 + Math.random() * 0.3,
       pulse: Math.random() * Math.PI * 2,
       pulseSpeed: 0.02 + Math.random() * 0.03,
     }));
@@ -76,8 +76,6 @@ const NatureAmbientCanvas: React.FC<{ isDark: boolean }> = ({ isDark }) => {
           ctx.beginPath();
           ctx.arc(star.x, star.y, star.size, 0, Math.PI * 2);
           ctx.fillStyle = `rgba(255, 255, 255, ${currentAlpha})`;
-          ctx.shadowColor = 'rgba(255, 255, 255, 0.8)';
-          ctx.shadowBlur = 4;
           ctx.fill();
         });
       } else {
@@ -89,12 +87,10 @@ const NatureAmbientCanvas: React.FC<{ isDark: boolean }> = ({ isDark }) => {
           if (dust.x > width + 10) dust.x = -10;
           if (dust.y < -10) dust.y = height + 10;
 
-          const currentAlpha = 0.25 + Math.sin(dust.pulse) * 0.25;
+          const currentAlpha = 0.2 + Math.sin(dust.pulse) * 0.2;
           ctx.beginPath();
           ctx.arc(dust.x, dust.y, dust.size, 0, Math.PI * 2);
-          ctx.fillStyle = `rgba(254, 240, 138, ${Math.max(0.1, currentAlpha)})`;
-          ctx.shadowColor = 'rgba(250, 204, 21, 0.5)';
-          ctx.shadowBlur = 3;
+          ctx.fillStyle = `rgba(240, 235, 210, ${Math.max(0.1, currentAlpha)})`;
           ctx.fill();
         });
       }
@@ -103,10 +99,9 @@ const NatureAmbientCanvas: React.FC<{ isDark: boolean }> = ({ isDark }) => {
       leaves.forEach(leaf => {
         leaf.x += leaf.speedX;
         leaf.wobble += leaf.wobbleSpeed;
-        leaf.y += leaf.speedY + Math.sin(leaf.wobble) * 0.6;
+        leaf.y += leaf.speedY + Math.sin(leaf.wobble) * 0.5;
         leaf.rotation += leaf.rotSpeed;
 
-        // Wrap around borders
         if (leaf.x > width + 20) {
           leaf.x = -20;
           leaf.y = Math.random() * (height * 0.8);
@@ -124,15 +119,9 @@ const NatureAmbientCanvas: React.FC<{ isDark: boolean }> = ({ isDark }) => {
         ctx.ellipse(0, 0, leaf.size, leaf.size * 0.45, 0, 0, Math.PI * 2);
 
         if (isDark) {
-          // Night leaves: soft moonlit silver / translucent sage
-          ctx.fillStyle = `rgba(226, 232, 240, ${leaf.opacity * 0.85})`;
-          ctx.shadowColor = 'rgba(255, 255, 255, 0.25)';
-          ctx.shadowBlur = 3;
+          ctx.fillStyle = `rgba(200, 210, 205, ${leaf.opacity * 0.75})`;
         } else {
-          // Day leaves: warm sunlit golden amber & olive green
-          ctx.fillStyle = `rgba(134, 239, 172, ${leaf.opacity * 0.9})`;
-          ctx.shadowColor = 'rgba(250, 204, 21, 0.3)';
-          ctx.shadowBlur = 3;
+          ctx.fillStyle = `rgba(125, 175, 140, ${leaf.opacity * 0.8})`;
         }
         ctx.fill();
         ctx.restore();
@@ -152,7 +141,8 @@ const NatureAmbientCanvas: React.FC<{ isDark: boolean }> = ({ isDark }) => {
   return (
     <canvas
       ref={canvasRef}
-      className="fixed inset-0 pointer-events-none z-0 w-full h-full"
+      className="fixed inset-0 pointer-events-none z-0"
+      style={{ opacity: 0.9 }}
     />
   );
 };
@@ -160,8 +150,10 @@ const NatureAmbientCanvas: React.FC<{ isDark: boolean }> = ({ isDark }) => {
 export const BlockedIntervention: React.FC = () => {
   const [session, setSession] = useState<DetoxSession | null>(null);
   const [weather, setWeather] = useState<WeatherData | null>(null);
-  const [remainingSeconds, setRemainingSeconds] = useState<number>(0);
-  const [themePref, setThemePref] = useState<'system' | 'light' | 'dark'>('system');
+  const [remainingSeconds, setRemainingSeconds] = useState(0);
+  const [attemptedDomain, setAttemptedDomain] = useState<string | null>(null);
+
+  // Dynamic system theme listener
   const [systemIsDark, setSystemIsDark] = useState<boolean>(() => {
     if (typeof window !== 'undefined' && window.matchMedia) {
       return window.matchMedia('(prefers-color-scheme: dark)').matches;
@@ -169,18 +161,8 @@ export const BlockedIntervention: React.FC = () => {
     return false;
   });
 
-  const isDarkMode = themePref === 'dark' ? true : themePref === 'light' ? false : systemIsDark;
+  const [themePref, setThemePref] = useState<'system' | 'light' | 'dark'>('system');
 
-  const [attemptedDomain, setAttemptedDomain] = useState<string>(() => {
-    try {
-      const urlParams = new URLSearchParams(window.location.search);
-      return urlParams.get('domain') || '';
-    } catch {
-      return '';
-    }
-  });
-
-  // Dynamic system theme listener
   useEffect(() => {
     if (typeof window !== 'undefined' && window.matchMedia) {
       const mediaQuery = window.matchMedia('(prefers-color-scheme: dark)');
@@ -190,63 +172,69 @@ export const BlockedIntervention: React.FC = () => {
     }
   }, []);
 
-  const redirectToOriginalSite = (fallbackDomain?: string) => {
-    const domain =
-      attemptedDomain ||
-      fallbackDomain ||
-      (session?.selectedDomains && session.selectedDomains[0]) ||
-      'instagram.com';
-    const clean = domain.replace(/^[a-zA-Z]+:\/\//, '').split('/')[0];
-    console.log('[tabzero] Restoring navigation to https://' + clean);
-    window.location.replace(`https://${clean}`);
-  };
-
-  // Sync storage & session state
+  // Parse original destination website from URL search parameters or session storage
   useEffect(() => {
-    getStorageData().then(data => {
-      setSession(data.history.present.activeSession);
-      setWeather(data.weather);
-      if (data.themePreference) setThemePref(data.themePreference);
-      setRemainingSeconds(calculateRemainingSeconds(data.history.present.activeSession));
+    const params = new URLSearchParams(window.location.search);
+    const domainFromUrl = params.get('site') || params.get('url') || params.get('domain');
 
-      if (!attemptedDomain) {
-        const detected =
-          data.lastBlockedDomain ||
-          (data.history.present.restrictedSites.length > 0
-            ? data.history.present.restrictedSites[0].domain
-            : '');
-        if (detected) setAttemptedDomain(detected);
+    if (domainFromUrl) {
+      setAttemptedDomain(domainFromUrl);
+      sessionStorage.setItem('tabzero_attempted_site', domainFromUrl);
+    } else {
+      const saved = sessionStorage.getItem('tabzero_attempted_site');
+      if (saved) {
+        setAttemptedDomain(saved);
+      }
+    }
+  }, []);
+
+  useEffect(() => {
+    getStorageData().then(d => {
+      setSession(d.history.present.activeSession);
+      setWeather(d.weather);
+      setThemePref(d.themePreference || 'system');
+      setRemainingSeconds(calculateRemainingSeconds(d.history.present.activeSession));
+      if (!d.weather) {
+        sendExtensionMessage({ type: 'REFRESH_WEATHER' }).then(updated => {
+          setWeather(updated.weather);
+        }).catch(() => {});
       }
     });
 
-    const unsubscribe = subscribeToStorage((data) => {
-      const isStillActive = data.history.present.activeSession?.status === 'active';
-      setSession(data.history.present.activeSession);
-      setWeather(data.weather);
-      if (data.themePreference) setThemePref(data.themePreference);
-      setRemainingSeconds(calculateRemainingSeconds(data.history.present.activeSession));
-
-      // If detox session was stopped or ended, immediately redirect back to target site!
-      if (!isStillActive) {
-        redirectToOriginalSite(data.lastBlockedDomain || data.history.present.restrictedSites[0]?.domain);
-      }
+    const unsubscribe = subscribeToStorage((updated) => {
+      setSession(updated.history.present.activeSession);
+      setWeather(updated.weather);
+      setThemePref(updated.themePreference || 'system');
+      setRemainingSeconds(calculateRemainingSeconds(updated.history.present.activeSession));
     });
 
     return () => unsubscribe();
-  }, [attemptedDomain]);
+  }, []);
 
-  // Timer tick effect with automatic redirect when timed session runs out
+  const isDarkMode = themePref === 'dark' ? true : themePref === 'light' ? false : systemIsDark;
+
+  const redirectToOriginalSite = () => {
+    if (attemptedDomain) {
+      let targetUrl = attemptedDomain.trim();
+      if (!targetUrl.startsWith('http://') && !targetUrl.startsWith('https://')) {
+        targetUrl = 'https://' + targetUrl;
+      }
+      window.location.href = targetUrl;
+    } else {
+      window.location.href = 'dashboard.html';
+    }
+  };
+
   useEffect(() => {
+    setRemainingSeconds(calculateRemainingSeconds(session));
     if (!session || session.status !== 'active') return;
 
     const interval = setInterval(() => {
       const remaining = calculateRemainingSeconds(session);
       setRemainingSeconds(remaining);
-      // Auto-completion ONLY applies to timed sessions, NEVER to permanent indefinite mode
       if (!session.isIndefinite && remaining <= 0) {
         clearInterval(interval);
         sendExtensionMessage({ type: 'SESSION_COMPLETE' });
-        // Automatically restore and redirect into the original website!
         redirectToOriginalSite();
       }
     }, 1000);
@@ -264,7 +252,6 @@ export const BlockedIntervention: React.FC = () => {
 
   const handleAdmitDefeat = async () => {
     await sendExtensionMessage({ type: 'SESSION_CANCEL' });
-    // Redirect user directly to the website they were initially trying to visit!
     redirectToOriginalSite();
   };
 
@@ -276,103 +263,81 @@ export const BlockedIntervention: React.FC = () => {
     <div className="relative min-h-screen w-full flex flex-col items-center justify-center p-4 sm:p-6 overflow-hidden select-none font-sans">
       
       {/* 1. Full-Screen Edge-to-Edge Background Landscape */}
-      <div className="fixed inset-0 w-full h-full -z-20 overflow-hidden bg-slate-950">
+      <div className="fixed inset-0 w-full h-full -z-20 overflow-hidden bg-stone-950">
         <img
           src={isDarkMode ? 'assets/landscape-dark.jpg' : 'assets/landscape-light.jpg'}
           alt="tabzero nature landscape"
-          className="w-full h-full object-cover object-center animate-starry-drift scale-[1.03] transition-opacity duration-1000"
+          className="w-full h-full object-cover object-center scale-[1.02] transition-opacity duration-700"
         />
 
         {/* Dynamic Vignette Shading for Immersive Contrast */}
         <div
-          className={`absolute inset-0 transition-colors duration-1000 pointer-events-none ${
+          className={`absolute inset-0 transition-colors duration-700 pointer-events-none ${
             isDarkMode
-              ? 'bg-gradient-to-b from-black/45 via-black/15 to-black/60'
-              : 'bg-gradient-to-b from-white/20 via-transparent to-black/25'
+              ? 'bg-gradient-to-b from-black/50 via-black/25 to-black/65'
+              : 'bg-gradient-to-b from-white/30 via-transparent to-black/20'
           }`}
         />
-
-        {/* Soft Moon/Sun Pulsing Glow Aura */}
-        <div
-          className={`absolute top-[18%] right-[22%] w-64 h-64 rounded-full blur-[80px] pointer-events-none animate-celestial-glow ${
-            isDarkMode
-              ? 'bg-indigo-300/15'
-              : 'bg-amber-300/35'
-          }`}
-        />
-
-        {/* Shooting Stars in Dark Mode */}
-        {isDarkMode && (
-          <>
-            <div className="absolute top-[12%] right-[42%] w-20 h-0.5 bg-gradient-to-r from-transparent via-white to-transparent rotate-[32deg] pointer-events-none animate-shooting-star-1" />
-            <div className="absolute top-[8%] right-[28%] w-24 h-0.5 bg-gradient-to-r from-transparent via-white to-transparent rotate-[35deg] pointer-events-none animate-shooting-star-2" />
-          </>
-        )}
       </div>
 
       {/* 2. Living Ambient Particle Canvas (Twinkling Stars, Swaying Leaves) */}
       <NatureAmbientCanvas isDark={isDarkMode} />
 
-      {/* 3. Overlaid Content Stack Directly on the Landscape */}
-      <div className="w-full max-w-lg mx-auto flex flex-col items-center text-center space-y-4 sm:space-y-5 z-10 py-6">
+      {/* 3. Overlaid Content Stack */}
+      <div className="w-full max-w-md mx-auto flex flex-col items-center text-center space-y-4 z-10 py-6">
 
-        {/* Top Stillness Pill */}
+        {/* Top Stillness Indicator */}
         <div
-          className={`inline-flex items-center gap-2 px-4 py-1.5 rounded-full text-xs font-medium tracking-wide border shadow-sm backdrop-blur-md transition-all duration-300 ${
+          className={`inline-flex items-center gap-2 px-3 py-1 rounded-full text-xs font-medium tracking-wide border backdrop-blur-md transition-colors ${
             isDarkMode
-              ? 'bg-slate-950/40 border-white/20 text-slate-200'
-              : 'bg-white/80 border-white/80 text-slate-700'
+              ? 'bg-stone-950/50 border-white/15 text-stone-300'
+              : 'bg-white/85 border-white/80 text-stone-700 shadow-subtle'
           }`}
         >
-          <Wind className={`w-3.5 h-3.5 ${isDarkMode ? 'text-indigo-300' : 'text-emerald-600'}`} />
+          <Wind className="w-3.5 h-3.5 text-sage-600 dark:text-sage-400" />
           <span>A Moment of Stillness • Digital Detox Active</span>
         </div>
 
         {/* Calm Headline & Subtitle */}
         <div className="space-y-1">
           <h1
-            className={`text-3xl sm:text-4xl font-light tracking-tight transition-colors duration-300 ${
+            className={`text-2xl sm:text-3xl font-light tracking-tight transition-colors ${
               isDarkMode
-                ? 'text-white drop-shadow-[0_2px_12px_rgba(0,0,0,0.8)]'
-                : 'text-slate-900 drop-shadow-[0_1px_8px_rgba(255,255,255,0.7)]'
+                ? 'text-white drop-shadow-[0_1px_4px_rgba(0,0,0,0.6)]'
+                : 'text-stone-900 drop-shadow-[0_1px_4px_rgba(255,255,255,0.7)]'
             }`}
           >
             Take a deep breath.
           </h1>
           <p
-            className={`text-xs sm:text-sm max-w-md mx-auto font-normal leading-relaxed transition-colors duration-300 ${
+            className={`text-xs sm:text-sm max-w-sm mx-auto font-normal leading-relaxed transition-colors ${
               isDarkMode
-                ? 'text-slate-200 drop-shadow-[0_1px_6px_rgba(0,0,0,0.7)]'
-                : 'text-slate-800 drop-shadow-[0_1px_4px_rgba(255,255,255,0.8)]'
+                ? 'text-stone-300 drop-shadow-[0_1px_3px_rgba(0,0,0,0.6)]'
+                : 'text-stone-700 drop-shadow-[0_1px_3px_rgba(255,255,255,0.8)]'
             }`}
           >
-            You chose to take a step back from screens.
+            You chose to step back from screens.
             <br />
-            Life is happening out here — gentle, unhurried, and real.
+            Life is happening beyond this device.
           </p>
         </div>
 
-        {/* Weather & Location Pill (Synchronized with Open-Meteo) */}
+        {/* Weather & Location */}
         <div
-          className={`inline-flex items-center gap-2 px-3.5 py-1.5 rounded-2xl border text-xs font-medium shadow-sm backdrop-blur-md transition-all duration-300 ${
+          className={`inline-flex items-center gap-2 px-3 py-1 rounded-lg border text-xs font-medium backdrop-blur-md transition-colors ${
             isDarkMode
-              ? 'bg-slate-950/40 border-white/15 text-slate-200'
-              : 'bg-white/75 border-white/80 text-slate-800'
+              ? 'bg-stone-950/50 border-white/15 text-stone-300'
+              : 'bg-white/80 border-white/80 text-stone-800 shadow-subtle'
           }`}
         >
           {formattedWeather ? (
             <>
-              <span className="text-sm leading-none select-none" role="img" aria-label={formattedWeather.description}>
+              <span className="text-sm select-none" role="img" aria-label={formattedWeather.description}>
                 {formattedWeather.emoji}
               </span>
               <span>{formattedWeather.temperatureText} · {formattedWeather.description}</span>
-              <span className="opacity-40">•</span>
+              <span className="opacity-30">•</span>
               <span>{formattedWeather.locationText}</span>
-              {formattedWeather.isCached && (
-                <span className="text-[10px] opacity-75 bg-black/10 dark:bg-white/10 px-1.5 py-0.5 rounded">
-                  Cached
-                </span>
-              )}
             </>
           ) : (
             <>
@@ -382,57 +347,52 @@ export const BlockedIntervention: React.FC = () => {
           )}
         </div>
 
-        {/* Translucent Glass Countdown / Active Shield Card */}
+        {/* Countdown Timer */}
         {session && session.status === 'active' && (
           <div
-            className={`w-full max-w-xs rounded-2xl p-4 sm:p-5 border shadow-card backdrop-blur-xl transition-all duration-300 ${
+            className={`w-full max-w-xs rounded-xl p-4 border backdrop-blur-md transition-colors ${
               isDarkMode
-                ? 'bg-slate-950/45 border-white/20 text-white shadow-[0_8px_32px_0_rgba(0,0,0,0.5)]'
-                : 'bg-white/75 border-white/90 text-slate-900 shadow-[0_8px_32px_0_rgba(255,255,255,0.5)]'
+                ? 'bg-stone-950/50 border-white/15 text-white'
+                : 'bg-white/85 border-white/80 text-stone-900 shadow-subtle'
             }`}
           >
             <div
-              className={`flex items-center justify-center gap-1.5 text-[11px] font-semibold uppercase tracking-wider mb-1 ${
-                isDarkMode ? 'text-slate-300' : 'text-slate-600'
+              className={`flex items-center justify-center gap-1.5 text-[10px] font-medium uppercase tracking-wider mb-1 ${
+                isDarkMode ? 'text-stone-400' : 'text-stone-500'
               }`}
             >
-              <Clock className="w-3.5 h-3.5" />
+              <Clock className="w-3 h-3" />
               <span>Session Remaining</span>
             </div>
-            <div className="font-mono text-4xl sm:text-5xl font-light tracking-tight drop-shadow-sm">
+            <div className="font-mono text-4xl sm:text-5xl font-light tracking-tight tabular-nums">
               {formatTimeRemaining(remainingSeconds)}
             </div>
           </div>
         )}
 
-        {/* Recommended Real-World Offline Activity Card */}
+        {/* Recommended Offline Activity */}
         {topRecommendation && (
           <div
-            className={`w-full max-w-md rounded-2xl p-4 sm:p-4.5 border text-left shadow-card backdrop-blur-xl transition-all duration-300 ${
+            className={`w-full max-w-sm rounded-xl p-3.5 border text-left backdrop-blur-md transition-colors ${
               isDarkMode
-                ? 'bg-slate-950/45 border-white/20 text-white shadow-[0_8px_32px_0_rgba(0,0,0,0.5)]'
-                : 'bg-white/75 border-white/90 text-slate-900 shadow-[0_8px_32px_0_rgba(255,255,255,0.5)]'
+                ? 'bg-stone-950/50 border-white/15 text-white'
+                : 'bg-white/85 border-white/80 text-stone-900 shadow-subtle'
             }`}
           >
-            <div className="flex items-center justify-between mb-1.5">
-              <div
-                className={`flex items-center gap-1.5 text-xs font-semibold uppercase tracking-wider ${
-                  isDarkMode ? 'text-indigo-300' : 'text-indigo-700'
-                }`}
-              >
-                <Sparkles className="w-3.5 h-3.5" />
-                <span>Recommended While You're Offline</span>
-              </div>
-              <span className="text-[11px] font-mono px-2 py-0.5 rounded-full bg-black/5 dark:bg-white/10 font-semibold opacity-80">
+            <div className="flex items-center justify-between mb-1">
+              <span className="text-[10px] font-semibold uppercase tracking-wider text-sage-700 dark:text-sage-300">
+                Recommended Offline
+              </span>
+              <span className="text-[11px] font-mono tabular-nums px-2 py-0.5 rounded bg-black/5 dark:bg-white/10 text-stone-400">
                 {topRecommendation.durationMinutes}m
               </span>
             </div>
-            <h4 className="text-sm font-semibold tracking-tight">
+            <h4 className="text-xs font-semibold tracking-tight">
               {topRecommendation.title}
             </h4>
             <p
-              className={`text-xs mt-0.5 leading-relaxed ${
-                isDarkMode ? 'text-slate-300' : 'text-slate-700'
+              className={`text-[11px] mt-0.5 leading-relaxed ${
+                isDarkMode ? 'text-stone-300' : 'text-stone-600'
               }`}
             >
               {topRecommendation.description}
@@ -440,48 +400,38 @@ export const BlockedIntervention: React.FC = () => {
           </div>
         )}
 
-        {/* Action Buttons: "Return to Zen" & "Admit Defeat" */}
-        <div className="flex flex-col sm:flex-row items-center justify-center gap-3 w-full pt-1">
+        {/* Actions: Return to Focus & Admit Defeat */}
+        <div className="flex flex-col sm:flex-row items-center justify-center gap-2.5 w-full pt-1">
           <button
             onClick={handleReturnToFocus}
-            className={`w-full sm:w-auto flex items-center justify-center gap-2 px-6 py-2.5 text-xs sm:text-sm font-medium rounded-xl transition-all cursor-pointer shadow-md active:scale-95 ${
-              isDarkMode
-                ? 'bg-white text-slate-950 hover:bg-slate-100 shadow-[0_4px_16px_rgba(255,255,255,0.2)]'
-                : 'bg-slate-900 text-white hover:bg-slate-800 shadow-[0_4px_16px_rgba(0,0,0,0.2)]'
-            }`}
+            className="w-full sm:w-auto flex items-center justify-center gap-2 px-6 py-2.5 text-xs font-semibold rounded-lg bg-sage-600 hover:bg-sage-700 text-white transition-colors cursor-pointer shadow-subtle"
           >
-            <ArrowLeft className="w-4 h-4" />
-            <span>Return to Zen</span>
+            <ArrowLeft className="w-3.5 h-3.5" />
+            <span>Return to Focus</span>
           </button>
 
           <button
             onClick={handleAdmitDefeat}
             title="Surrender session early and return to website"
-            className={`w-full sm:w-auto flex items-center justify-center gap-1.5 px-4 py-2.5 text-xs font-medium rounded-xl transition-all cursor-pointer backdrop-blur-md border ${
+            className={`w-full sm:w-auto flex items-center justify-center gap-1.5 px-4 py-2.5 text-xs font-medium rounded-lg transition-colors cursor-pointer border backdrop-blur-md ${
               isDarkMode
-                ? 'bg-black/35 hover:bg-rose-950/40 text-slate-300 hover:text-rose-300 border-white/15'
-                : 'bg-white/60 hover:bg-rose-50/80 text-slate-700 hover:text-rose-700 border-white/80'
+                ? 'bg-stone-900/60 hover:bg-rose-950/40 text-stone-300 hover:text-rose-300 border-white/15'
+                : 'bg-white/70 hover:bg-rose-50 text-stone-600 hover:text-rose-700 border-white/80 shadow-subtle'
             }`}
           >
-            <Flag className="w-3.5 h-3.5" />
+            <Flag className="w-3 h-3" />
             <span>Admit Defeat</span>
           </button>
         </div>
 
-        {/* Minimalist Footnote */}
-        <div className="flex items-center gap-1.5 pt-1">
+        {/* Minimalist Brand Mark */}
+        <div className="flex items-center gap-1.5 pt-2 opacity-75">
           <img
             src="icons/icon16.png"
             alt="tabzero logo"
             className="w-3.5 h-3.5 rounded-full object-cover"
           />
-          <p
-            className={`text-[11px] font-medium ${
-              isDarkMode
-                ? 'text-slate-400 drop-shadow-[0_1px_4px_rgba(0,0,0,0.9)]'
-                : 'text-slate-600 drop-shadow-[0_1px_4px_rgba(255,255,255,0.8)]'
-            }`}
-          >
+          <p className="text-[11px] text-stone-400 font-medium">
             tabzero. — Life happens beyond the screen.
           </p>
         </div>
