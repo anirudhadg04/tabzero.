@@ -8,7 +8,6 @@ import {
 } from '../types';
 import { getStorageData } from '../storage';
 import { sendExtensionMessage, subscribeToStorage } from '../services/bridge';
-import { calculateRemainingSeconds, formatTimeRemaining } from '../services/session';
 import { formatDuration } from '../services/tracker';
 import { formatWeather, generateRecommendations } from '../weather';
 import { extractRootDomain } from '../blocking/rules';
@@ -18,9 +17,6 @@ import {
   Sparkles,
   Shield,
   Clock,
-  Play,
-  Pause,
-  Power,
   RotateCcw,
   Sun,
   Moon,
@@ -49,22 +45,10 @@ import {
   User,
 } from 'lucide-react';
 
-const PRESET_DURATIONS = [
-  { label: '5m', seconds: 5 * 60 },
-  { label: '15m', seconds: 15 * 60 },
-  { label: '30m', seconds: 30 * 60 },
-  { label: '1h', seconds: 60 * 60 },
-  { label: '2h', seconds: 120 * 60 },
-];
-
 export const Dashboard: React.FC = () => {
   const [data, setData] = useState<OfflineStorageSchema>(INITIAL_STORAGE);
   const [loading, setLoading] = useState(true);
-  const [activeNav, setActiveNav] = useState<'home' | 'focus' | 'discover' | 'progress' | 'profile'>('home');
-
-  // Input states for session timer
-  const [customHours, setCustomHours] = useState(0);
-  const [customMinutes, setCustomMinutes] = useState(30);
+  const [activeNav, setActiveNav] = useState<'home' | 'discover' | 'progress' | 'profile'>('home');
 
   // Input state for restricted sites
   const [newDomain, setNewDomain] = useState('');
@@ -79,15 +63,11 @@ export const Dashboard: React.FC = () => {
   const [activityDuration, setActivityDuration] = useState(30);
   const [showActivityForm, setShowActivityForm] = useState(false);
 
-  // Live countdown state
-  const [timeValue, setTimeValue] = useState<number>(0);
-
   useEffect(() => {
     document.title = 'Dashboard';
     getStorageData().then(d => {
       setData(d);
       setLoading(false);
-      setTimeValue(calculateRemainingSeconds(d.history.present.activeSession));
       if (!d.weather) {
         sendExtensionMessage({ type: 'REFRESH_WEATHER' }).then(setData).catch(() => {});
       }
@@ -95,7 +75,6 @@ export const Dashboard: React.FC = () => {
 
     const unsubscribe = subscribeToStorage(updated => {
       setData(updated);
-      setTimeValue(calculateRemainingSeconds(updated.history.present.activeSession));
     });
 
     return () => unsubscribe();
@@ -103,23 +82,6 @@ export const Dashboard: React.FC = () => {
 
   const session = data.history.present.activeSession;
   const isActive = session?.status === 'active';
-  const isPaused = session?.status === 'paused';
-
-  // Live timer interval
-  useEffect(() => {
-    setTimeValue(calculateRemainingSeconds(session));
-    if (!session || session.status !== 'active') return;
-
-    const interval = setInterval(() => {
-      const remaining = calculateRemainingSeconds(session);
-      setTimeValue(remaining);
-      if (!session.isIndefinite && remaining <= 0) {
-        sendExtensionMessage({ type: 'SESSION_COMPLETE' });
-      }
-    }, 1000);
-
-    return () => clearInterval(interval);
-  }, [session]);
 
   const isDarkMode = data.themePreference === 'dark';
 
@@ -149,44 +111,6 @@ export const Dashboard: React.FC = () => {
   const handleRedo = async () => {
     const updated = await sendExtensionMessage({ type: 'TRIGGER_REDO' });
     setData(updated);
-  };
-
-  const handleStartSession = async (totalSeconds: number, isIndefinite?: boolean) => {
-    const updated = await sendExtensionMessage({
-      type: 'SESSION_START',
-      durationSeconds: totalSeconds,
-      durationMinutes: Math.max(1, Math.round(totalSeconds / 60)),
-      isIndefinite: !!isIndefinite,
-    });
-    setData(updated);
-  };
-
-  const handlePauseSession = async () => {
-    const updated = await sendExtensionMessage({ type: 'SESSION_PAUSE' });
-    setData(updated);
-  };
-
-  const handleResumeSession = async () => {
-    const updated = await sendExtensionMessage({ type: 'SESSION_RESUME' });
-    setData(updated);
-  };
-
-  const handleCompleteSession = async () => {
-    const updated = await sendExtensionMessage({ type: 'SESSION_COMPLETE' });
-    setData(updated);
-  };
-
-  const handleCancelSession = async () => {
-    const updated = await sendExtensionMessage({ type: 'SESSION_CANCEL' });
-    setData(updated);
-  };
-
-  const handleToggleOnOff = () => {
-    if (isActive) {
-      handleCancelSession();
-    } else {
-      handleStartSession(0, true);
-    }
   };
 
   const handleSetDailyGoal = async (minutes: number) => {
@@ -548,174 +472,7 @@ export const Dashboard: React.FC = () => {
         </section>
 
         {/* =========================================================================
-            SECTION 2: DETOX TIMER & SHIELD
-        ========================================================================= */}
-        <section
-          id="section-focus"
-          className={`rounded-xl p-6 border transition-colors ${
-            isDarkMode
-              ? 'bg-[#191B1F] border-[#282A30]'
-              : 'bg-[#FFFFFF] border-[#E8E7E3] shadow-subtle'
-          }`}
-        >
-          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-5 border-b border-stone-100 dark:border-stone-800">
-            <div className="flex items-center gap-3">
-              <span
-                className={`w-2.5 h-2.5 rounded-full ${
-                  isActive
-                    ? 'bg-sage-500'
-                    : isPaused
-                    ? 'bg-amber-500'
-                    : 'bg-stone-300 dark:bg-stone-700'
-                }`}
-              />
-              <div>
-                <h3 className="text-base font-semibold tracking-tight text-stone-900 dark:text-stone-100">
-                  {isActive
-                    ? 'Digital Detox in Progress'
-                    : isPaused
-                    ? 'Detox Session Paused'
-                    : 'Set Disconnect Time'}
-                </h3>
-                <p className="text-xs text-stone-500 dark:text-stone-400 mt-0.5">
-                  {isActive
-                    ? 'Restricted sites are actively redirected to nature.'
-                    : 'Select a duration or toggle continuous shielding.'}
-                </p>
-              </div>
-            </div>
-
-            {/* On / Off Button */}
-            <div className="flex items-center gap-2">
-              <span className="text-xs text-stone-500 font-medium">Continuous Shield:</span>
-              <button
-                type="button"
-                onClick={handleToggleOnOff}
-                title={isActive ? 'Detox is Active. Click to Turn OFF' : 'Click to Turn ON'}
-                className={`flex items-center gap-1.5 px-3 py-1 rounded-md text-xs font-semibold transition-colors cursor-pointer ${
-                  isActive
-                    ? 'bg-sage-600 hover:bg-sage-700 text-white'
-                    : isDarkMode
-                    ? 'bg-[#121316] text-stone-300 hover:text-white border border-[#282A30]'
-                    : 'bg-[#FAF9F6] text-stone-700 hover:text-stone-900 border border-[#E5E4DF]'
-                }`}
-              >
-                <Power className="w-3 h-3" />
-                <span>{isActive ? 'ON' : 'OFF'}</span>
-              </button>
-            </div>
-          </div>
-
-          <div className="py-6">
-            {isActive || isPaused ? (
-              <div className="flex flex-col items-center justify-center space-y-4">
-                <div className="font-mono text-5xl sm:text-6xl font-light tracking-tight tabular-nums">
-                  {session?.isIndefinite ? 'Active' : formatTimeRemaining(timeValue)}
-                </div>
-
-                <div className="flex items-center gap-3 pt-2">
-                  {isActive ? (
-                    <button
-                      onClick={handlePauseSession}
-                      className="flex items-center gap-1.5 px-5 py-2 bg-stone-100 dark:bg-stone-800 hover:bg-stone-200 dark:hover:bg-stone-700 text-xs font-medium rounded-lg cursor-pointer transition-colors"
-                    >
-                      <Pause className="w-3.5 h-3.5" /> Pause
-                    </button>
-                  ) : (
-                    <button
-                      onClick={handleResumeSession}
-                      className="flex items-center gap-1.5 px-5 py-2 bg-sage-600 hover:bg-sage-700 text-white text-xs font-medium rounded-lg cursor-pointer transition-colors shadow-subtle"
-                    >
-                      <Play className="w-3.5 h-3.5" /> Resume
-                    </button>
-                  )}
-                  <button
-                    onClick={handleCancelSession}
-                    className="px-4 py-2 text-stone-500 hover:text-rose-600 dark:hover:text-rose-400 text-xs font-medium rounded-lg border border-stone-200 dark:border-stone-700 cursor-pointer transition-colors"
-                  >
-                    End Session
-                  </button>
-                </div>
-              </div>
-            ) : (
-              <div className="space-y-5 max-w-xl mx-auto">
-                {/* Presets */}
-                <div className="flex items-center justify-center gap-2">
-                  {PRESET_DURATIONS.map(p => {
-                    const isSelected = customMinutes * 60 + customHours * 3600 === p.seconds;
-                    return (
-                      <button
-                        key={p.label}
-                        onClick={() => {
-                          setCustomHours(Math.floor(p.seconds / 3600));
-                          setCustomMinutes(Math.floor((p.seconds % 3600) / 60));
-                        }}
-                        className={`px-4 py-1.5 text-xs font-mono tabular-nums rounded-lg border transition-colors cursor-pointer ${
-                          isSelected
-                            ? 'bg-sage-50 border-sage-500 text-sage-800 dark:bg-sage-950/70 dark:border-sage-600 dark:text-sage-200 font-semibold'
-                            : isDarkMode
-                            ? 'bg-[#121316] border-[#282A30] text-stone-300 hover:border-stone-600'
-                            : 'bg-[#FAF9F6] border-[#E8E7E3] text-stone-700 hover:border-stone-400'
-                        }`}
-                      >
-                        {p.label}
-                      </button>
-                    );
-                  })}
-                </div>
-
-                {/* Duration Stepper */}
-                <div className="flex items-center justify-center gap-3">
-                  <div className="flex items-center gap-1.5">
-                    <input
-                      type="number"
-                      min="0"
-                      max="12"
-                      value={customHours}
-                      onChange={e => setCustomHours(Math.max(0, parseInt(e.target.value) || 0))}
-                      className={`w-16 px-2.5 py-1.5 text-center font-mono tabular-nums text-sm rounded-lg border outline-none ${
-                        isDarkMode
-                          ? 'bg-[#121316] border-[#282A30] text-white focus:border-sage-500'
-                          : 'bg-[#FAF9F6] border-[#E5E4DF] text-stone-900 focus:border-sage-600'
-                      }`}
-                    />
-                    <span className="text-xs text-stone-400 font-medium">hr</span>
-                  </div>
-
-                  <span className="text-stone-300 dark:text-stone-700">:</span>
-
-                  <div className="flex items-center gap-1.5">
-                    <input
-                      type="number"
-                      min="0"
-                      max="59"
-                      value={customMinutes}
-                      onChange={e => setCustomMinutes(Math.max(0, Math.min(59, parseInt(e.target.value) || 0)))}
-                      className={`w-16 px-2.5 py-1.5 text-center font-mono tabular-nums text-sm rounded-lg border outline-none ${
-                        isDarkMode
-                          ? 'bg-[#121316] border-[#282A30] text-white focus:border-sage-500'
-                          : 'bg-[#FAF9F6] border-[#E5E4DF] text-stone-900 focus:border-sage-600'
-                      }`}
-                    />
-                    <span className="text-xs text-stone-400 font-medium">min</span>
-                  </div>
-                </div>
-
-                <div className="text-center pt-2">
-                  <button
-                    onClick={() => handleStartSession(customHours * 3600 + customMinutes * 60)}
-                    className="px-8 py-2.5 bg-sage-600 hover:bg-sage-700 text-white text-xs font-semibold rounded-lg cursor-pointer transition-colors shadow-subtle"
-                  >
-                    Start Detox
-                  </button>
-                </div>
-              </div>
-            )}
-          </div>
-        </section>
-
-        {/* =========================================================================
-            SECTION 3: WEBSITE USAGE (Clean Ranked List)
+            SECTION 2: WEBSITE USAGE (Clean Ranked List)
         ========================================================================= */}
         <section
           id="section-progress"
@@ -1402,17 +1159,17 @@ export const Dashboard: React.FC = () => {
         </button>
 
         <button
-          onClick={() => scrollToSection('section-focus', 'focus')}
+          onClick={() => scrollToSection('section-progress', 'progress')}
           className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium transition-colors cursor-pointer ${
-            activeNav === 'focus'
+            activeNav === 'progress'
               ? isDarkMode
                 ? 'bg-[#282A30] text-white'
                 : 'bg-stone-100 text-stone-900 font-semibold'
               : 'hover:text-stone-900 dark:hover:text-white'
           }`}
         >
-          <Clock className="w-3.5 h-3.5" />
-          <span>Focus</span>
+          <BarChart2 className="w-3.5 h-3.5" />
+          <span>Usage</span>
         </button>
 
         <button
@@ -1427,20 +1184,6 @@ export const Dashboard: React.FC = () => {
         >
           <CloudSun className="w-3.5 h-3.5" />
           <span>Discover</span>
-        </button>
-
-        <button
-          onClick={() => scrollToSection('section-progress', 'progress')}
-          className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium transition-colors cursor-pointer ${
-            activeNav === 'progress'
-              ? isDarkMode
-                ? 'bg-[#282A30] text-white'
-                : 'bg-stone-100 text-stone-900 font-semibold'
-              : 'hover:text-stone-900 dark:hover:text-white'
-          }`}
-        >
-          <BarChart2 className="w-3.5 h-3.5" />
-          <span>Progress</span>
         </button>
 
         <button
