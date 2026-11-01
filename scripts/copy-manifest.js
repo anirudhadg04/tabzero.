@@ -1,17 +1,15 @@
 import fs from 'fs';
 import path from 'path';
+import esbuild from 'esbuild';
 
-const srcManifestPath = path.resolve('public/manifest.json');
-const srcIconsPath = path.resolve('public/icons');
-const srcAssetsPath = path.resolve('public/assets');
+const distDir = path.resolve('dist');
+const distFirefoxDir = path.resolve('dist-firefox');
+const distChromeDir = path.resolve('dist-chrome');
 
-if (!fs.existsSync(srcManifestPath)) {
-  console.error('Source manifest not found at:', srcManifestPath);
-  process.exit(1);
-}
-
-const rawManifest = fs.readFileSync(srcManifestPath, 'utf-8');
-const baseManifest = JSON.parse(rawManifest);
+const chromeManifestSrc = path.resolve('public/manifest.chrome.json');
+const firefoxManifestSrc = path.resolve('public/manifest.firefox.json');
+const iconsSrc = path.resolve('public/icons');
+const assetsSrc = path.resolve('public/assets');
 
 function copyDirRecursive(src, dest) {
   if (!fs.existsSync(src)) return;
@@ -30,54 +28,54 @@ function copyDirRecursive(src, dest) {
   }
 }
 
-// 1. Copy to Universal dist/ (compatible with Chrome, Edge, Brave, Opera, Vivaldi, Arc, Safari, Firefox 121+)
-const distDir = path.resolve('dist');
-if (fs.existsSync(distDir)) {
-  fs.writeFileSync(path.join(distDir, 'manifest.json'), JSON.stringify(baseManifest, null, 2), 'utf-8');
-  console.log('✓ Created Universal manifest.json in dist/');
-
-  copyDirRecursive(srcIconsPath, path.join(distDir, 'icons'));
-  console.log('✓ Copied icons to dist/icons/');
-
-  copyDirRecursive(srcAssetsPath, path.join(distDir, 'assets'));
-  console.log('✓ Copied assets to dist/assets/');
+if (!fs.existsSync(distDir)) {
+  fs.mkdirSync(distDir, { recursive: true });
 }
 
-// Helper to populate target directory from dist
-function syncTargetDistribution(targetName, manifestModifier) {
-  const targetDir = path.resolve(targetName);
-  if (!fs.existsSync(distDir)) return;
+// 1. Bundle standalone background.js as IIFE
+// Crucial: Classic background scripts in Firefox MV3 do not support top-level ES module imports.
+// Generating a bundled IIFE script guarantees 100% compatibility in both Firefox and Chrome.
+const bgEntry = path.resolve('src/background/index.ts');
+const bgOutDist = path.join(distDir, 'background.js');
 
-  // Copy dist build output into target
-  copyDirRecursive(distDir, targetDir);
-
-  // Apply manifest modifications
-  const targetManifest = manifestModifier(JSON.parse(JSON.stringify(baseManifest)));
-  fs.writeFileSync(path.join(targetDir, 'manifest.json'), JSON.stringify(targetManifest, null, 2), 'utf-8');
-  console.log(`✓ Synchronized ${targetName}/ with customized manifest`);
-}
-
-// 2. Target: Firefox Add-ons (AMO) optimized distribution
-syncTargetDistribution('dist-firefox', (m) => {
-  // Firefox doesn't support 'sidePanel' permission in MV3, uses 'sidebar_action'
-  m.permissions = (m.permissions || []).filter(p => p !== 'sidePanel');
-  delete m.side_panel;
-  m.sidebar_action = {
-    default_panel: 'popup.html',
-    default_title: 'tabzero.',
-    default_icon: {
-      16: 'icons/icon16.png',
-      32: 'icons/icon32.png',
-      48: 'icons/icon48.png',
-      128: 'icons/icon128.png',
-    },
-  };
-  return m;
+esbuild.buildSync({
+  entryPoints: [bgEntry],
+  bundle: true,
+  outfile: bgOutDist,
+  format: 'iife',
+  platform: 'browser',
+  target: 'es2020',
+  minify: false,
+  sourcemap: false,
 });
+console.log('✓ Compiled self-contained background.js (IIFE bundle, zero external imports)');
 
-// 3. Target: Chrome Web Store & Chromium optimized distribution
-syncTargetDistribution('dist-chrome', (m) => {
-  // Chrome doesn't require browser_specific_settings
-  delete m.browser_specific_settings;
-  return m;
-});
+// 2. Setup Chrome / Universal build (dist/)
+fs.copyFileSync(chromeManifestSrc, path.join(distDir, 'manifest.json'));
+copyDirRecursive(iconsSrc, path.join(distDir, 'icons'));
+copyDirRecursive(assetsSrc, path.join(distDir, 'assets'));
+
+// Clean up extra manifest templates from dist/
+const distChromeManifest = path.join(distDir, 'manifest.chrome.json');
+const distFirefoxManifest = path.join(distDir, 'manifest.firefox.json');
+if (fs.existsSync(distChromeManifest)) fs.unlinkSync(distChromeManifest);
+if (fs.existsSync(distFirefoxManifest)) fs.unlinkSync(distFirefoxManifest);
+console.log('✓ Created Chrome production build in dist/ with manifest.chrome.json');
+
+// 3. Setup Firefox dedicated build (dist-firefox/)
+copyDirRecursive(distDir, distFirefoxDir);
+fs.copyFileSync(firefoxManifestSrc, path.join(distFirefoxDir, 'manifest.json'));
+const ffChromeManifest = path.join(distFirefoxDir, 'manifest.chrome.json');
+const ffFirefoxManifest = path.join(distFirefoxDir, 'manifest.firefox.json');
+if (fs.existsSync(ffChromeManifest)) fs.unlinkSync(ffChromeManifest);
+if (fs.existsSync(ffFirefoxManifest)) fs.unlinkSync(ffFirefoxManifest);
+console.log('✓ Created Firefox production build in dist-firefox/ with manifest.firefox.json');
+
+// 4. Setup Chrome dedicated build (dist-chrome/)
+copyDirRecursive(distDir, distChromeDir);
+fs.copyFileSync(chromeManifestSrc, path.join(distChromeDir, 'manifest.json'));
+const chChromeManifest = path.join(distChromeDir, 'manifest.chrome.json');
+const chFirefoxManifest = path.join(distChromeDir, 'manifest.firefox.json');
+if (fs.existsSync(chChromeManifest)) fs.unlinkSync(chChromeManifest);
+if (fs.existsSync(chFirefoxManifest)) fs.unlinkSync(chFirefoxManifest);
+console.log('✓ Created Chrome dedicated build in dist-chrome/ with manifest.chrome.json');

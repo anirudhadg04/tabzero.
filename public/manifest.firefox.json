@@ -1,0 +1,65 @@
+{
+  "manifest_version": 3,
+  "name": "tabzero. — Digital Detox",
+  "version": "1.0.0",
+  "description": "Life happens beyond the screen. Move more. Scroll less. Live more.",
+  "icons": {
+    "16": "icons/icon16.png",
+    "32": "icons/icon32.png",
+    "48": "icons/icon48.png",
+    "128": "icons/icon128.png"
+  },
+  "action": {
+    "default_popup": "popup.html",
+    "default_title": "tabzero.",
+    "default_icon": {
+      "16": "icons/icon16.png",
+      "32": "icons/icon32.png",
+      "48": "icons/icon48.png",
+      "128": "icons/icon128.png"
+    }
+  },
+  "background": {
+    "scripts": ["background.js"]
+  },
+  "permissions": [
+    "storage",
+    "declarativeNetRequest",
+    "tabs",
+    "webNavigation",
+    "idle",
+    "alarms"
+  ],
+  "sidebar_action": {
+    "default_panel": "popup.html",
+    "default_title": "tabzero.",
+    "default_icon": {
+      "16": "icons/icon16.png",
+      "32": "icons/icon32.png",
+      "48": "icons/icon48.png",
+      "128": "icons/icon128.png"
+    }
+  },
+  "browser_specific_settings": {
+    "gecko": {
+      "id": "tabzero@digitaldetox.app",
+      "strict_min_version": "109.0"
+    }
+  },
+  "host_permissions": [
+    "*://*/*"
+  ],
+  "web_accessible_resources": [
+    {
+      "resources": [
+        "dashboard.html",
+        "blocked.html",
+        "icons/*",
+        "assets/*"
+      ],
+      "matches": [
+        "<all_urls>"
+      ]
+    }
+  ]
+}
