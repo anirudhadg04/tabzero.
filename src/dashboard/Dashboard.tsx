@@ -569,8 +569,7 @@ export const Dashboard: React.FC = () => {
         </section>
 
         {/* =========================================================================
-            SECTION 2: ACTIVE FOCUS SESSION
-            (Renamed from 'Active Focus Sanctuary' to 'Focus Session' / 'Digital Detox')
+            SECTION 2: DETOX TIMER & SHIELD
         ========================================================================= */}
         <section
           id="section-focus"
@@ -597,7 +596,7 @@ export const Dashboard: React.FC = () => {
                     ? 'Digital Detox in Progress'
                     : isPaused
                     ? 'Detox Session Paused'
-                    : 'Focus Session'}
+                    : 'Set Disconnect Time'}
                 </h3>
                 <p className="text-xs text-stone-500 dark:text-stone-400 mt-0.5">
                   {isActive
@@ -728,7 +727,7 @@ export const Dashboard: React.FC = () => {
                     onClick={() => handleStartSession(customHours * 3600 + customMinutes * 60)}
                     className="px-8 py-2.5 bg-sage-600 hover:bg-sage-700 text-white text-xs font-semibold rounded-lg cursor-pointer transition-colors shadow-subtle"
                   >
-                    Start Focused Detox
+                    Start Detox
                   </button>
                 </div>
               </div>

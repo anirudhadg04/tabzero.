@@ -229,7 +229,7 @@ export const DetoxTimerCard: React.FC<DetoxTimerCardProps> = ({
           />
           <div>
             <h3 className="text-base font-semibold tracking-tight">
-              {isActive ? 'Digital Detox in Progress' : isPaused ? 'Session Paused' : 'Focus Session'}
+              {isActive ? 'Digital Detox in Progress' : isPaused ? 'Session Paused' : 'Set Disconnect Time'}
             </h3>
             <p className="text-xs text-stone-500 dark:text-stone-400 mt-0.5">
               {isActive
