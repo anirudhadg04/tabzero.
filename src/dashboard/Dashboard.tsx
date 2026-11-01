@@ -83,6 +83,7 @@ export const Dashboard: React.FC = () => {
   const [timeValue, setTimeValue] = useState<number>(0);
 
   useEffect(() => {
+    document.title = 'Dashboard';
     getStorageData().then(d => {
       setData(d);
       setLoading(false);
