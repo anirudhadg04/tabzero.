@@ -437,7 +437,7 @@ export const Dashboard: React.FC = () => {
             {/* Dark / Light Mode Toggle */}
             <button
               onClick={handleToggleTheme}
-              title={`Theme: ${themePref.toUpperCase()} (Click to toggle)`}
+              title={isDarkMode ? 'Switch to Light Mode' : 'Switch to Dark Mode'}
               className={`p-2 rounded-lg border transition-colors cursor-pointer shadow-subtle ${
                 isDarkMode
                   ? 'bg-[#191B1F] border-[#282A30] text-stone-300 hover:text-white'

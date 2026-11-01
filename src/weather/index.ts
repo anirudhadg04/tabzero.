@@ -701,7 +701,7 @@ export async function fetchOpenMeteoWeather(
       weatherCode: current.weather_code ?? 0,
       windSpeed: Math.round(current.wind_speed_10m ?? 0),
       condition: interp.condition,
-      city: finalCity,
+      city: finalCity || 'Bengaluru, IN',
       latitude: finalLat,
       longitude: finalLon,
       fetchedAt: now,

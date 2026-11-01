@@ -41,6 +41,7 @@
   "web_accessible_resources": [
     {
       "resources": [
+        "dashboard.html",
         "blocked.html",
         "icons/*",
         "assets/*"
