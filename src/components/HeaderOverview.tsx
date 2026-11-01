@@ -77,7 +77,7 @@ export const HeaderOverview: React.FC<HeaderOverviewProps> = ({
                 tabzero.
               </h1>
               <p className="text-xs text-slate-400">
-                Move more. Scroll less. Live more.
+                Life happens beyond the screen. Scroll less. Live more.
               </p>
             </div>
           </div>

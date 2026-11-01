@@ -17,9 +17,9 @@ export const DEFAULT_CORE_STATE: CoreAppState = {
   completedSessions: [],
   dailyGoalMinutes: 60,
   pledges: [
-    { id: 'p_1', title: 'Screen-free morning routine', pillar: 'MOVE', targetMinutes: 30, isActive: true, createdAt: Date.now() - 86400000 },
-    { id: 'p_2', title: 'Deep focus without social feeds', pillar: 'DISCONNECT', targetMinutes: 60, isActive: true, createdAt: Date.now() - 43200000 },
-    { id: 'p_3', title: 'Evening outdoor unwind', pillar: 'RECONNECT', targetMinutes: 45, isActive: true, createdAt: Date.now() - 21600000 },
+    { id: 'p_1', title: 'Screen-free morning routine', targetMinutes: 30, isActive: true, createdAt: Date.now() - 86400000 },
+    { id: 'p_2', title: 'Deep focus without social feeds', targetMinutes: 60, isActive: true, createdAt: Date.now() - 43200000 },
+    { id: 'p_3', title: 'Evening outdoor unwind', targetMinutes: 45, isActive: true, createdAt: Date.now() - 21600000 },
   ],
   activities: [],
   blockedAttemptsTotal: 0,

@@ -2,7 +2,6 @@ import React, { useState } from 'react';
 import { RefreshCw, Plus, Check, CloudOff, Wind, Droplets } from 'lucide-react';
 import { ActivityRecommendation, WeatherData } from '../types';
 import { formatWeather, generateRecommendations } from '../weather';
-import { PillarBadge } from './PillarBadge';
 
 interface WeatherActivityCardProps {
   weather: WeatherData | null;
@@ -209,7 +208,7 @@ export const WeatherActivityCard: React.FC<WeatherActivityCardProps> = ({
         </div>
       </div>
 
-      {/* Suggested 3 Pillars Grid with Direct Plan Activity Integration */}
+      {/* Suggested Weather-Aware Activities */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-3.5">
         {recommendations.map(rec => {
           const isAdded = !!addedIds[rec.id];
@@ -224,8 +223,9 @@ export const WeatherActivityCard: React.FC<WeatherActivityCardProps> = ({
             >
               <div>
                 <div className="flex items-center justify-between gap-2 mb-2">
-                  <PillarBadge pillar={rec.pillar} size="sm" />
-                  <span className="text-[11px] text-slate-400 font-medium">{rec.durationMinutes}m</span>
+                  <span className="text-xs font-semibold px-2 py-0.5 rounded-full bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300 font-mono">
+                    {rec.durationMinutes}m
+                  </span>
                 </div>
 
                 <h4 className={`text-sm font-medium mb-1 ${isDark ? 'text-white' : 'text-slate-800'}`}>

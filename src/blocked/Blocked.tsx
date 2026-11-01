@@ -5,7 +5,6 @@ import { getStorageData } from '../storage';
 import { sendExtensionMessage, subscribeToStorage } from '../services/bridge';
 import { calculateRemainingSeconds, formatTimeRemaining } from '../services/session';
 import { formatWeather, generateRecommendations } from '../weather';
-import { PillarBadge } from '../components/PillarBadge';
 
 // Living Nature Ambient Animation Canvas (Drifting Leaves, Twinkling Stars, Floating Starlight Dust)
 const NatureAmbientCanvas: React.FC<{ isDark: boolean }> = ({ isDark }) => {
@@ -424,7 +423,9 @@ export const BlockedIntervention: React.FC = () => {
                 <Sparkles className="w-3.5 h-3.5" />
                 <span>Recommended While You're Offline</span>
               </div>
-              <PillarBadge pillar={topRecommendation.pillar} size="sm" />
+              <span className="text-[11px] font-mono px-2 py-0.5 rounded-full bg-black/5 dark:bg-white/10 font-semibold opacity-80">
+                {topRecommendation.durationMinutes}m
+              </span>
             </div>
             <h4 className="text-sm font-semibold tracking-tight">
               {topRecommendation.title}

@@ -5,7 +5,6 @@ import {
   Pledge,
   OfflineActivity,
   ActivityRecommendation,
-  PillarType,
 } from '../types';
 import { getStorageData } from '../storage';
 import { sendExtensionMessage, subscribeToStorage } from '../services/bridge';
@@ -14,7 +13,6 @@ import { formatDuration } from '../services/tracker';
 import { formatWeather, generateRecommendations } from '../weather';
 import { extractRootDomain } from '../blocking/rules';
 import { HistoryControls } from '../components/HistoryControls';
-import { PillarBadge } from '../components/PillarBadge';
 import { INITIAL_STORAGE } from '../storage/defaults';
 import {
   Sparkles,
@@ -75,13 +73,11 @@ export const Dashboard: React.FC = () => {
 
   // Input states for pledges
   const [pledgeTitle, setPledgeTitle] = useState('');
-  const [pledgePillar, setPledgePillar] = useState<PillarType>('DISCONNECT');
   const [pledgeTargetMins, setPledgeTargetMins] = useState(30);
   const [showPledgeForm, setShowPledgeForm] = useState(false);
 
   // Input states for user-entered planned activities (purely user-entered)
   const [activityTitle, setActivityTitle] = useState('');
-  const [activityPillar, setActivityPillar] = useState<PillarType>('MOVE');
   const [activityDuration, setActivityDuration] = useState(30);
   const [showActivityForm, setShowActivityForm] = useState(false);
 
@@ -236,7 +232,6 @@ export const Dashboard: React.FC = () => {
       type: 'CREATE_PLEDGE',
       pledge: {
         title: pledgeTitle.trim(),
-        pillar: pledgePillar,
         targetMinutes: pledgeTargetMins,
         isActive: true,
       },
@@ -251,7 +246,6 @@ export const Dashboard: React.FC = () => {
       type: 'ADD_ACTIVITY',
       activity: {
         title: rec.title,
-        pillar: rec.pillar,
         durationMinutes: rec.durationMinutes,
         weatherRecommended: true,
         completed: false,
@@ -267,7 +261,6 @@ export const Dashboard: React.FC = () => {
       type: 'ADD_ACTIVITY',
       activity: {
         title: activityTitle.trim(),
-        pillar: activityPillar,
         durationMinutes: activityDuration,
         completed: false,
       },
@@ -445,7 +438,7 @@ export const Dashboard: React.FC = () => {
                 tabzero<span className="text-indigo-500">.</span>
               </h1>
               <p className="text-xs text-slate-500 dark:text-slate-400">
-                Life happens beyond the screen. Move more. Scroll less. Live more.
+                Life happens beyond the screen. Scroll less. Live more.
               </p>
             </div>
           </div>
@@ -495,7 +488,7 @@ export const Dashboard: React.FC = () => {
         </header>
 
         {/* =========================================================================
-            SECTION 2: DIGITAL OVERVIEW (Core Pillar 1: Digital Usage)
+            SECTION 2: DIGITAL OVERVIEW (Digital Usage)
         ========================================================================= */}
         <section className="space-y-4">
           <div className="flex items-center justify-between">
@@ -605,7 +598,7 @@ export const Dashboard: React.FC = () => {
         </section>
 
         {/* =========================================================================
-            SECTION 3: DETOX GOAL (Core Pillar 2: Detox Progress)
+            SECTION 3: DETOX GOAL (Detox Progress)
         ========================================================================= */}
         <section
           className={`p-6 sm:p-7 rounded-3xl border transition-all ${
@@ -670,7 +663,7 @@ export const Dashboard: React.FC = () => {
         </section>
 
         {/* =========================================================================
-            SECTION 4: ACTIVE FOCUS (Core Pillar 3: Active Focus)
+            SECTION 4: ACTIVE FOCUS (Active Focus)
         ========================================================================= */}
         <section
           id="section-focus"
@@ -1295,7 +1288,7 @@ export const Dashboard: React.FC = () => {
             </div>
           )}
 
-          {/* 3 Pillar Offline Recommendations */}
+          {/* Weather-Calibrated Offline Recommendations */}
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
             {recommendations.map(rec => {
               const alreadyPlanned = userActivities.some(
@@ -1313,7 +1306,9 @@ export const Dashboard: React.FC = () => {
                 >
                   <div>
                     <div className="flex items-center justify-between mb-3">
-                      <PillarBadge pillar={rec.pillar} />
+                      <span className="px-2.5 py-0.5 rounded-full text-[10px] font-semibold bg-indigo-50 text-indigo-700 dark:bg-indigo-950/60 dark:text-indigo-300 border border-indigo-200/50 dark:border-indigo-800/40">
+                        Offline Activity
+                      </span>
                       <span className="text-[11px] font-mono text-slate-400 font-semibold">
                         {rec.durationMinutes}m
                       </span>
@@ -1400,27 +1395,20 @@ export const Dashboard: React.FC = () => {
                   }`}
                 />
                 <div className="flex items-center gap-2">
-                  <select
-                    value={pledgePillar}
-                    onChange={e => setPledgePillar(e.target.value as PillarType)}
-                    className={`flex-1 px-2.5 py-1.5 text-xs rounded-xl border focus:outline-none ${
-                      isDarkMode ? 'bg-slate-800 border-slate-700 text-white' : 'bg-white border-slate-200 text-slate-900'
-                    }`}
-                  >
-                    <option value="MOVE">MOVE</option>
-                    <option value="DISCONNECT">DISCONNECT</option>
-                    <option value="RECONNECT">RECONNECT</option>
-                  </select>
-                  <input
-                    type="number"
-                    min="5"
-                    max="180"
-                    value={pledgeTargetMins}
-                    onChange={e => setPledgeTargetMins(parseInt(e.target.value) || 30)}
-                    className={`w-20 px-2 py-1.5 text-xs font-mono rounded-xl border focus:outline-none ${
-                      isDarkMode ? 'bg-slate-800 border-slate-700 text-white' : 'bg-white border-slate-200 text-slate-900'
-                    }`}
-                  />
+                  <div className="flex items-center gap-1.5 flex-1">
+                    <span className="text-[11px] text-slate-400">Target:</span>
+                    <input
+                      type="number"
+                      min="5"
+                      max="180"
+                      value={pledgeTargetMins}
+                      onChange={e => setPledgeTargetMins(parseInt(e.target.value) || 30)}
+                      className={`w-20 px-2 py-1.5 text-xs font-mono rounded-xl border focus:outline-none ${
+                        isDarkMode ? 'bg-slate-800 border-slate-700 text-white' : 'bg-white border-slate-200 text-slate-900'
+                      }`}
+                    />
+                    <span className="text-[11px] text-slate-400">mins</span>
+                  </div>
                   <button
                     type="submit"
                     className="px-4 py-1.5 text-xs font-bold rounded-xl bg-indigo-500 hover:bg-indigo-600 text-white cursor-pointer"
@@ -1438,7 +1426,7 @@ export const Dashboard: React.FC = () => {
                   className="p-3.5 rounded-2xl bg-slate-50 dark:bg-slate-800/40 border border-slate-100 dark:border-slate-800 flex items-center justify-between"
                 >
                   <div className="flex items-center gap-3">
-                    <PillarBadge pillar={p.pillar} />
+                    <span className="w-2 h-2 rounded-full bg-indigo-500 shrink-0" />
                     <span className="text-xs font-medium text-slate-800 dark:text-slate-200">
                       {p.title}
                     </span>
@@ -1489,27 +1477,20 @@ export const Dashboard: React.FC = () => {
                   }`}
                 />
                 <div className="flex items-center gap-2">
-                  <select
-                    value={activityPillar}
-                    onChange={e => setActivityPillar(e.target.value as PillarType)}
-                    className={`flex-1 px-2.5 py-1.5 text-xs rounded-xl border focus:outline-none ${
-                      isDarkMode ? 'bg-slate-800 border-slate-700 text-white' : 'bg-white border-slate-200 text-slate-900'
-                    }`}
-                  >
-                    <option value="MOVE">MOVE</option>
-                    <option value="DISCONNECT">DISCONNECT</option>
-                    <option value="RECONNECT">RECONNECT</option>
-                  </select>
-                  <input
-                    type="number"
-                    min="5"
-                    max="180"
-                    value={activityDuration}
-                    onChange={e => setActivityDuration(parseInt(e.target.value) || 30)}
-                    className={`w-20 px-2 py-1.5 text-xs font-mono rounded-xl border focus:outline-none ${
-                      isDarkMode ? 'bg-slate-800 border-slate-700 text-white' : 'bg-white border-slate-200 text-slate-900'
-                    }`}
-                  />
+                  <div className="flex items-center gap-1.5 flex-1">
+                    <span className="text-[11px] text-slate-400">Duration:</span>
+                    <input
+                      type="number"
+                      min="5"
+                      max="180"
+                      value={activityDuration}
+                      onChange={e => setActivityDuration(parseInt(e.target.value) || 30)}
+                      className={`w-20 px-2 py-1.5 text-xs font-mono rounded-xl border focus:outline-none ${
+                        isDarkMode ? 'bg-slate-800 border-slate-700 text-white' : 'bg-white border-slate-200 text-slate-900'
+                      }`}
+                    />
+                    <span className="text-[11px] text-slate-400">mins</span>
+                  </div>
                   <button
                     type="submit"
                     className="px-4 py-1.5 text-xs font-bold rounded-xl bg-emerald-500 hover:bg-emerald-600 text-white cursor-pointer"
@@ -1558,7 +1539,6 @@ export const Dashboard: React.FC = () => {
                   </div>
 
                   <div className="flex items-center gap-2">
-                    <PillarBadge pillar={act.pillar} />
                     <button
                       type="button"
                       onClick={() => handleRemoveActivity(act.id)}
@@ -1588,7 +1568,7 @@ export const Dashboard: React.FC = () => {
             tabzero. — Digital Wellness Browser Extension
           </p>
           <p className="mt-1">
-            Life happens beyond the screen. Move more. Scroll less. Live more.
+            Life happens beyond the screen. Scroll less. Live more.
           </p>
           <p className="mt-1 text-[11px] text-slate-400 dark:text-slate-500">
             IEEE Computer Society Hackathon • Team CodeNova • Manifest V3 Compliant

@@ -135,7 +135,6 @@ export const Popup: React.FC = () => {
       type: 'ADD_ACTIVITY',
       activity: {
         title: rec.title,
-        pillar: rec.pillar,
         durationMinutes: rec.durationMinutes,
         weatherRecommended: true,
         completed: false,

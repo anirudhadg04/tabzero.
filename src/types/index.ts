@@ -1,10 +1,10 @@
-export type PillarType = 'MOVE' | 'DISCONNECT' | 'RECONNECT';
+export type PillarType = 'MOVE' | 'DISCONNECT' | 'RECONNECT' | string;
 
 export interface RestrictedSite {
   id: string;
   domain: string;
   enabled: boolean;
-  category: 'social' | 'entertainment' | 'forums' | 'productivity' | 'custom';
+  category?: 'social' | 'entertainment' | 'forums' | 'productivity' | 'custom' | string;
   blockedCount: number;
   addedAt: number;
 }
@@ -27,7 +27,7 @@ export interface DetoxSession {
 export interface Pledge {
   id: string;
   title: string;
-  pillar: PillarType;
+  pillar?: PillarType;
   targetMinutes: number;
   isActive: boolean;
   createdAt: number;
@@ -36,7 +36,7 @@ export interface Pledge {
 export interface OfflineActivity {
   id: string;
   title: string;
-  pillar: PillarType;
+  pillar?: PillarType;
   durationMinutes: number;
   weatherRecommended?: boolean;
   completed: boolean;
@@ -109,7 +109,7 @@ export interface ActivityRecommendation {
   id: string;
   title: string;
   description: string;
-  pillar: PillarType;
+  pillar?: PillarType;
   durationMinutes: number;
   weatherTag: string;
   icon: string;

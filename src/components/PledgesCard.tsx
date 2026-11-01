@@ -1,7 +1,6 @@
 import React, { useState } from 'react';
 import { Target, Plus, CheckCircle, Circle, Sparkles } from 'lucide-react';
-import { OfflineActivity, PillarType, Pledge } from '../types';
-import { PillarBadge } from './PillarBadge';
+import { OfflineActivity, Pledge } from '../types';
 
 interface PledgesCardProps {
   pledges: Pledge[];
@@ -24,12 +23,10 @@ export const PledgesCard: React.FC<PledgesCardProps> = ({
 }) => {
   const [showAddPledge, setShowAddPledge] = useState(false);
   const [pledgeTitle, setPledgeTitle] = useState('');
-  const [pledgePillar, setPledgePillar] = useState<PillarType>('DISCONNECT');
   const [pledgeMinutes, setPledgeMinutes] = useState('45');
 
   const [showAddAct, setShowAddAct] = useState(false);
   const [actTitle, setActTitle] = useState('');
-  const [actPillar, setActPillar] = useState<PillarType>('MOVE');
   const [actMinutes, setActMinutes] = useState('30');
 
   const handleCreatePledge = (e: React.FormEvent) => {
@@ -37,7 +34,6 @@ export const PledgesCard: React.FC<PledgesCardProps> = ({
     if (!pledgeTitle.trim()) return;
     onCreatePledge({
       title: pledgeTitle.trim(),
-      pillar: pledgePillar,
       targetMinutes: parseInt(pledgeMinutes, 10) || 30,
       isActive: true,
     });
@@ -50,7 +46,6 @@ export const PledgesCard: React.FC<PledgesCardProps> = ({
     if (!actTitle.trim()) return;
     onAddActivity({
       title: actTitle.trim(),
-      pillar: actPillar,
       durationMinutes: parseInt(actMinutes, 10) || 30,
       completed: false,
     });
@@ -155,23 +150,12 @@ export const PledgesCard: React.FC<PledgesCardProps> = ({
               autoFocus
             />
             <div className="flex gap-2">
-              <select
-                value={pledgePillar}
-                onChange={e => setPledgePillar(e.target.value as PillarType)}
-                className={`px-2.5 py-1.5 text-xs rounded-lg outline-none border ${
-                  isDark ? 'bg-slate-800 border-slate-700 text-slate-200' : 'bg-white border-slate-200 text-slate-700'
-                }`}
-              >
-                <option value="MOVE">MOVE</option>
-                <option value="DISCONNECT">DISCONNECT</option>
-                <option value="RECONNECT">RECONNECT</option>
-              </select>
               <input
                 type="number"
                 placeholder="Mins"
                 value={pledgeMinutes}
                 onChange={e => setPledgeMinutes(e.target.value)}
-                className={`w-20 px-2.5 py-1.5 text-xs rounded-lg outline-none border ${
+                className={`w-28 px-2.5 py-1.5 text-xs rounded-lg outline-none border ${
                   isDark ? 'bg-slate-800 border-slate-700 text-white' : 'bg-white border-slate-200 text-slate-800'
                 }`}
               />
@@ -200,7 +184,6 @@ export const PledgesCard: React.FC<PledgesCardProps> = ({
                   <p className="text-[10px] text-slate-400">{p.targetMinutes} minutes offline</p>
                 </div>
               </div>
-              <PillarBadge pillar={p.pillar} size="sm" />
             </div>
           ))}
           {pledges.length === 0 && (
@@ -247,7 +230,7 @@ export const PledgesCard: React.FC<PledgesCardProps> = ({
           }`}>
             <input
               type="text"
-              placeholder="Activity name (e.g. Evening cycling with music)"
+              placeholder="Activity name (e.g. Evening walk in park)"
               value={actTitle}
               onChange={e => setActTitle(e.target.value)}
               className={`w-full px-3 py-2 text-xs rounded-lg outline-none border focus:border-indigo-400 ${
@@ -256,23 +239,12 @@ export const PledgesCard: React.FC<PledgesCardProps> = ({
               autoFocus
             />
             <div className="flex gap-2">
-              <select
-                value={actPillar}
-                onChange={e => setActPillar(e.target.value as PillarType)}
-                className={`px-2.5 py-1.5 text-xs rounded-lg outline-none border ${
-                  isDark ? 'bg-slate-800 border-slate-700 text-slate-200' : 'bg-white border-slate-200 text-slate-700'
-                }`}
-              >
-                <option value="MOVE">MOVE</option>
-                <option value="DISCONNECT">DISCONNECT</option>
-                <option value="RECONNECT">RECONNECT</option>
-              </select>
               <input
                 type="number"
                 placeholder="Mins"
                 value={actMinutes}
                 onChange={e => setActMinutes(e.target.value)}
-                className={`w-20 px-2.5 py-1.5 text-xs rounded-lg outline-none border ${
+                className={`w-28 px-2.5 py-1.5 text-xs rounded-lg outline-none border ${
                   isDark ? 'bg-slate-800 border-slate-700 text-white' : 'bg-white border-slate-200 text-slate-800'
                 }`}
               />
@@ -303,8 +275,7 @@ export const PledgesCard: React.FC<PledgesCardProps> = ({
               <div className="flex items-center gap-3 min-w-0">
                 <button
                   onClick={() => onCompleteActivity(act.id)}
-                  disabled={act.completed}
-                  title={act.completed ? 'Completed' : 'Click to Mark Complete'}
+                  title={act.completed ? 'Mark Incomplete' : 'Click to Mark Complete'}
                   className="cursor-pointer"
                 >
                   {act.completed ? (
@@ -327,8 +298,6 @@ export const PledgesCard: React.FC<PledgesCardProps> = ({
                   </div>
                 </div>
               </div>
-
-              <PillarBadge pillar={act.pillar} size="sm" />
             </div>
           ))}
           {activities.length === 0 && (
