@@ -1047,11 +1047,6 @@ export const Dashboard: React.FC = () => {
                       {site.domain}
                     </span>
                   </div>
-                  <div className="mt-1">
-                    <span className="text-[10px] font-mono text-rose-500 font-medium">
-                      {site.blockedCount} deflections
-                    </span>
-                  </div>
                 </div>
 
                 <div className="flex items-center gap-1.5">

@@ -120,17 +120,6 @@ export const RestrictedSitesCard: React.FC<RestrictedSitesCardProps> = ({
                 </span>
               </div>
               <div className="flex items-center gap-1.5 shrink-0">
-                {site.blockedCount > 0 && (
-                  <span
-                    className={`text-[10px] font-semibold px-1.5 py-0.5 rounded ${
-                      isDark
-                        ? 'text-rose-400 bg-rose-950/60 border border-rose-900/40'
-                        : 'text-rose-500 bg-rose-50'
-                    }`}
-                  >
-                    {site.blockedCount} blocked
-                  </span>
-                )}
                 <button
                   onClick={() => onRemoveSite(site.id)}
                   className="p-1 text-slate-400 hover:text-rose-500 rounded transition-colors cursor-pointer"
@@ -260,11 +249,6 @@ export const RestrictedSitesCard: React.FC<RestrictedSitesCardProps> = ({
                     {site.category}
                   </span>
                 </div>
-                {site.blockedCount > 0 && (
-                  <p className="text-[11px] text-rose-500 font-medium mt-0.5">
-                    {site.blockedCount} navigation attempt{site.blockedCount > 1 ? 's' : ''} redirected
-                  </p>
-                )}
               </div>
             </div>
 
