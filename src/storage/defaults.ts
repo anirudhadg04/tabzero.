@@ -52,7 +52,7 @@ export const INITIAL_STORAGE: OfflineStorageSchema = {
   },
   lastActiveTimestamp: Date.now(),
   trackingActive: true,
-  themePreference: 'system',
+  themePreference: 'light',
   lastBlockedDomain: '',
   tabDestinations: {},
 };

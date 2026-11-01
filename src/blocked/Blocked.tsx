@@ -152,25 +152,7 @@ export const BlockedIntervention: React.FC = () => {
   const [weather, setWeather] = useState<WeatherData | null>(null);
   const [remainingSeconds, setRemainingSeconds] = useState(0);
   const [attemptedDomain, setAttemptedDomain] = useState<string | null>(null);
-
-  // Dynamic system theme listener
-  const [systemIsDark, setSystemIsDark] = useState<boolean>(() => {
-    if (typeof window !== 'undefined' && window.matchMedia) {
-      return window.matchMedia('(prefers-color-scheme: dark)').matches;
-    }
-    return false;
-  });
-
-  const [themePref, setThemePref] = useState<'system' | 'light' | 'dark'>('system');
-
-  useEffect(() => {
-    if (typeof window !== 'undefined' && window.matchMedia) {
-      const mediaQuery = window.matchMedia('(prefers-color-scheme: dark)');
-      const listener = (e: MediaQueryListEvent) => setSystemIsDark(e.matches);
-      mediaQuery.addEventListener('change', listener);
-      return () => mediaQuery.removeEventListener('change', listener);
-    }
-  }, []);
+  const [themePref, setThemePref] = useState<'light' | 'dark'>('light');
 
   // Parse original destination website from URL search parameters or session storage
   useEffect(() => {
@@ -192,7 +174,7 @@ export const BlockedIntervention: React.FC = () => {
     getStorageData().then(d => {
       setSession(d.history.present.activeSession);
       setWeather(d.weather);
-      setThemePref(d.themePreference || 'system');
+      setThemePref(d.themePreference === 'dark' ? 'dark' : 'light');
       setRemainingSeconds(calculateRemainingSeconds(d.history.present.activeSession));
       if (!d.weather) {
         sendExtensionMessage({ type: 'REFRESH_WEATHER' }).then(updated => {
@@ -204,14 +186,14 @@ export const BlockedIntervention: React.FC = () => {
     const unsubscribe = subscribeToStorage((updated) => {
       setSession(updated.history.present.activeSession);
       setWeather(updated.weather);
-      setThemePref(updated.themePreference || 'system');
+      setThemePref(updated.themePreference === 'dark' ? 'dark' : 'light');
       setRemainingSeconds(calculateRemainingSeconds(updated.history.present.activeSession));
     });
 
     return () => unsubscribe();
   }, []);
 
-  const isDarkMode = themePref === 'dark' ? true : themePref === 'light' ? false : systemIsDark;
+  const isDarkMode = themePref === 'dark';
 
   useEffect(() => {
     if (typeof document !== 'undefined') {

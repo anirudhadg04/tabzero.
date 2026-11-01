@@ -24,7 +24,6 @@ import {
   RotateCcw,
   Sun,
   Moon,
-  Monitor,
   Globe,
   Award,
   Zap,
@@ -80,23 +79,6 @@ export const Dashboard: React.FC = () => {
   const [activityDuration, setActivityDuration] = useState(30);
   const [showActivityForm, setShowActivityForm] = useState(false);
 
-  // System theme listener
-  const [systemIsDark, setSystemIsDark] = useState<boolean>(() => {
-    if (typeof window !== 'undefined' && window.matchMedia) {
-      return window.matchMedia('(prefers-color-scheme: dark)').matches;
-    }
-    return false;
-  });
-
-  useEffect(() => {
-    if (typeof window !== 'undefined' && window.matchMedia) {
-      const mediaQuery = window.matchMedia('(prefers-color-scheme: dark)');
-      const listener = (e: MediaQueryListEvent) => setSystemIsDark(e.matches);
-      mediaQuery.addEventListener('change', listener);
-      return () => mediaQuery.removeEventListener('change', listener);
-    }
-  }, []);
-
   // Live countdown state
   const [timeValue, setTimeValue] = useState<number>(0);
 
@@ -138,8 +120,7 @@ export const Dashboard: React.FC = () => {
     return () => clearInterval(interval);
   }, [session]);
 
-  const themePref = data.themePreference || 'system';
-  const isDarkMode = themePref === 'dark' ? true : themePref === 'light' ? false : systemIsDark;
+  const isDarkMode = data.themePreference === 'dark';
 
   // Sync Tailwind .dark class to root document element so dark: utility classes apply
   useEffect(() => {
@@ -152,10 +133,9 @@ export const Dashboard: React.FC = () => {
     }
   }, [isDarkMode]);
 
-  // Handlers
+  // Handlers - Toggle strictly between Light and Dark
   const handleToggleTheme = async () => {
-    const nextTheme: 'system' | 'light' | 'dark' =
-      themePref === 'system' ? 'light' : themePref === 'light' ? 'dark' : 'system';
+    const nextTheme: 'light' | 'dark' = isDarkMode ? 'light' : 'dark';
     const updated = await sendExtensionMessage({ type: 'SET_THEME', theme: nextTheme });
     setData(updated);
   };
@@ -463,12 +443,10 @@ export const Dashboard: React.FC = () => {
                   : 'bg-white border-[#E8E7E3] text-stone-600 hover:text-stone-900'
               }`}
             >
-              {themePref === 'dark' ? (
-                <Moon className="w-3.5 h-3.5" />
-              ) : themePref === 'light' ? (
+              {isDarkMode ? (
                 <Sun className="w-3.5 h-3.5" />
               ) : (
-                <Monitor className="w-3.5 h-3.5" />
+                <Moon className="w-3.5 h-3.5" />
               )}
             </button>
           </div>

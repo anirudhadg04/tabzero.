@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { ExternalLink, Sparkles, Moon, Sun, Monitor, Shield } from 'lucide-react';
+import { ExternalLink, Sparkles, Moon, Sun, Shield } from 'lucide-react';
 import { OfflineStorageSchema, RestrictedSite, ActivityRecommendation } from '../types';
 import { getStorageData } from '../storage';
 import { sendExtensionMessage, subscribeToStorage } from '../services/bridge';
@@ -12,22 +12,6 @@ import { INITIAL_STORAGE } from '../storage/defaults';
 export const Popup: React.FC = () => {
   const [data, setData] = useState<OfflineStorageSchema>(INITIAL_STORAGE);
   const [loading, setLoading] = useState(true);
-  const [systemIsDark, setSystemIsDark] = useState<boolean>(() => {
-    if (typeof window !== 'undefined' && window.matchMedia) {
-      return window.matchMedia('(prefers-color-scheme: dark)').matches;
-    }
-    return false;
-  });
-
-  // Dynamic system theme listener
-  useEffect(() => {
-    if (typeof window !== 'undefined' && window.matchMedia) {
-      const mediaQuery = window.matchMedia('(prefers-color-scheme: dark)');
-      const listener = (e: MediaQueryListEvent) => setSystemIsDark(e.matches);
-      mediaQuery.addEventListener('change', listener);
-      return () => mediaQuery.removeEventListener('change', listener);
-    }
-  }, []);
 
   useEffect(() => {
     getStorageData().then(d => {
@@ -45,8 +29,7 @@ export const Popup: React.FC = () => {
     return () => unsubscribe();
   }, []);
 
-  const themePref = data.themePreference || 'system';
-  const isDarkMode = themePref === 'dark' ? true : themePref === 'light' ? false : systemIsDark;
+  const isDarkMode = data.themePreference === 'dark';
 
   useEffect(() => {
     if (typeof document !== 'undefined') {
@@ -59,8 +42,7 @@ export const Popup: React.FC = () => {
   }, [isDarkMode]);
 
   const handleToggleTheme = async () => {
-    const nextTheme: 'system' | 'light' | 'dark' =
-      themePref === 'system' ? 'dark' : themePref === 'dark' ? 'light' : 'system';
+    const nextTheme: 'light' | 'dark' = isDarkMode ? 'light' : 'dark';
     const updated = await sendExtensionMessage({ type: 'SET_THEME', theme: nextTheme });
     setData(updated);
   };
@@ -210,19 +192,17 @@ export const Popup: React.FC = () => {
           {/* Theme Mode Toggle */}
           <button
             onClick={handleToggleTheme}
-            title={`Current Theme: ${themePref.toUpperCase()} (Click to change mode)`}
+            title={isDarkMode ? 'Switch to Light Mode' : 'Switch to Dark Mode'}
             className={`p-1.5 rounded-lg border shadow-subtle transition-colors cursor-pointer ${
               isDarkMode
                 ? 'text-stone-300 bg-[#191B1F] border-[#282A30] hover:text-white'
                 : 'text-stone-600 bg-white border-[#E8E7E3] hover:text-stone-900'
             }`}
           >
-            {themePref === 'dark' ? (
-              <Moon className="w-3.5 h-3.5" />
-            ) : themePref === 'light' ? (
+            {isDarkMode ? (
               <Sun className="w-3.5 h-3.5" />
             ) : (
-              <Monitor className="w-3.5 h-3.5" />
+              <Moon className="w-3.5 h-3.5" />
             )}
           </button>
 

@@ -146,7 +146,7 @@ export interface OfflineStorageSchema {
   };
   lastActiveTimestamp: number;
   trackingActive: boolean;
-  themePreference?: 'system' | 'light' | 'dark';
+  themePreference?: 'light' | 'dark';
   lastBlockedDomain?: string;
   tabDestinations?: Record<number, string>;
 }
@@ -174,6 +174,6 @@ export type ExtensionMessage =
   | { type: 'COMPLETE_ACTIVITY'; id: string }
   | { type: 'REMOVE_ACTIVITY'; id: string }
   | { type: 'REFRESH_WEATHER' }
-  | { type: 'SET_THEME'; theme: 'system' | 'light' | 'dark' }
+  | { type: 'SET_THEME'; theme: 'light' | 'dark' }
   | { type: 'RECORD_BLOCKED_TAB'; tabId: number; domain: string }
   | { type: 'OPEN_DASHBOARD' };
