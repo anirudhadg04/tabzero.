@@ -6,6 +6,8 @@
   "scripts": {
     "dev": "vite",
     "build": "vite build && node scripts/copy-manifest.js",
+    "build:firefox": "vite build && node scripts/copy-manifest.js",
+    "build:chrome": "vite build && node scripts/copy-manifest.js",
     "server": "node backend/server.js",
     "test:history": "tsx scripts/test-undo-redo.ts",
     "test:backend": "tsx scripts/test-backend.ts",

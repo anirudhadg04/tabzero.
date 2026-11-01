@@ -35,6 +35,12 @@
   "side_panel": {
     "default_path": "popup.html"
   },
+  "browser_specific_settings": {
+    "gecko": {
+      "id": "tabzero@digitaldetox.app",
+      "strict_min_version": "109.0"
+    }
+  },
   "host_permissions": [
     "*://*/*"
   ],

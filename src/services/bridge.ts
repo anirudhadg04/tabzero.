@@ -20,27 +20,47 @@ import {
   removePlannedActivity,
 } from '../history/actions';
 import { evaluateAchievements } from './achievements';
+import { getExtensionAPI } from './browserApi';
 
 /**
- * Dispatch message to Chrome background worker or fallback locally
+ * Dispatch message to background service worker (Chrome, Firefox, Safari, Edge) or fallback locally
  */
 export async function sendExtensionMessage(message: ExtensionMessage): Promise<OfflineStorageSchema> {
-  if (typeof chrome !== 'undefined' && chrome.runtime && chrome.runtime.sendMessage) {
+  const api = getExtensionAPI();
+
+  if (api && api.runtime && api.runtime.sendMessage) {
+    try {
+      // 1. Try native Promise (standard in browser.*, modern Chrome MV3, Safari, Edge)
+      const response: any = await api.runtime.sendMessage(message);
+      if (response && response.data) {
+        return response.data;
+      }
+      if (response && response.success) {
+        return await getStorageData();
+      }
+    } catch {
+      // If Promise rejects or is not supported, attempt callback
+    }
+
     return new Promise((resolve) => {
-      chrome.runtime.sendMessage(message, (response) => {
-        if (chrome.runtime.lastError) {
-          console.warn('[tabzero Bridge] Runtime message fallback:', chrome.runtime.lastError.message);
-          handleLocalFallback(message).then(resolve);
-        } else if (response && response.data) {
-          resolve(response.data);
-        } else {
-          getStorageData().then(resolve);
-        }
-      });
+      try {
+        api.runtime.sendMessage(message, (response: any) => {
+          if (api.runtime?.lastError) {
+            console.warn('[tabzero Bridge] Runtime message fallback:', api.runtime.lastError.message);
+            handleLocalFallback(message).then(resolve);
+          } else if (response && response.data) {
+            resolve(response.data);
+          } else {
+            getStorageData().then(resolve);
+          }
+        });
+      } catch {
+        handleLocalFallback(message).then(resolve);
+      }
     });
-  } else {
-    return handleLocalFallback(message);
   }
+
+  return handleLocalFallback(message);
 }
 
 /**
@@ -144,11 +164,16 @@ async function handleLocalFallback(message: ExtensionMessage): Promise<OfflineSt
       data.achievements = evaluateAchievements(data.achievements, data.history.present);
       break;
 
-    case 'OPEN_DASHBOARD':
-      if (typeof window !== 'undefined') {
+    case 'OPEN_DASHBOARD': {
+      const api = getExtensionAPI();
+      if (api && api.tabs && api.tabs.create) {
+        const url = api.runtime?.getURL ? api.runtime.getURL('dashboard.html') : 'dashboard.html';
+        api.tabs.create({ url });
+      } else if (typeof window !== 'undefined') {
         window.open('dashboard.html', '_blank');
       }
       break;
+    }
   }
 
   await setStorageData(data);

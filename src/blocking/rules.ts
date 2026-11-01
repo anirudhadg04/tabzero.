@@ -1,6 +1,38 @@
 import { RestrictedSite } from '../types';
+import { getExtensionAPI } from '../services/browserApi';
 
 const BASE_RULE_ID = 1000;
+
+/**
+ * Checks whether a URL belongs to internal browser pages or extensions across all engines:
+ * Chrome (chrome://, chrome-extension://)
+ * Firefox (about:, moz-extension://)
+ * Safari (safari:, safari-web-extension://, safari-extension://)
+ * Edge (edge://)
+ * Brave (brave://)
+ * Opera (opera://)
+ */
+export function isInternalBrowserUrl(url: string): boolean {
+  if (!url) return true;
+  const lower = url.trim().toLowerCase();
+  return (
+    lower.startsWith('chrome-extension://') ||
+    lower.startsWith('moz-extension://') ||
+    lower.startsWith('safari-web-extension://') ||
+    lower.startsWith('safari-extension://') ||
+    lower.startsWith('chrome://') ||
+    lower.startsWith('edge://') ||
+    lower.startsWith('brave://') ||
+    lower.startsWith('opera://') ||
+    lower.startsWith('vivaldi://') ||
+    lower.startsWith('about:') ||
+    lower.startsWith('safari:') ||
+    lower.startsWith('view-source:') ||
+    lower.startsWith('data:') ||
+    lower.startsWith('blob:') ||
+    lower.startsWith('devtools://')
+  );
+}
 
 /**
  * Extracts normalized root domain (e.g. "instagram.com" from "https://www.instagram.com/p/123", "www.instagram.com", etc.)
@@ -54,23 +86,26 @@ export function isDomainBlocked(targetUrlOrHostname: string, siteDomain: string)
 }
 
 /**
- * Synchronize chrome.declarativeNetRequest dynamic rules.
+ * Synchronize declarativeNetRequest dynamic rules across Chrome, Edge, Brave, Opera, Firefox, Safari.
  * If active is true, rules redirecting blocked domains to /blocked.html are installed.
  * If active is false, all dynamic rules are removed.
  */
 export async function syncBlockingRules(sites: RestrictedSite[], isSessionActive: boolean): Promise<void> {
-  if (typeof chrome === 'undefined' || !chrome.declarativeNetRequest) {
-    console.log('[tabzero Rules] declarativeNetRequest not available (standalone mode).');
+  const api = getExtensionAPI();
+  const dnr = api?.declarativeNetRequest;
+
+  if (!dnr || typeof dnr.updateDynamicRules !== 'function') {
+    console.log('[tabzero Rules] declarativeNetRequest not available in this environment (standalone/unsupported mode).');
     return;
   }
 
   try {
-    const existingRules = await chrome.declarativeNetRequest.getDynamicRules();
-    const existingRuleIds = existingRules.map(r => r.id);
+    const existingRules = await dnr.getDynamicRules();
+    const existingRuleIds = (existingRules || []).map((r: any) => r.id);
 
     if (!isSessionActive) {
       if (existingRuleIds.length > 0) {
-        await chrome.declarativeNetRequest.updateDynamicRules({
+        await dnr.updateDynamicRules({
           removeRuleIds: existingRuleIds,
           addRules: [],
         });
@@ -80,43 +115,44 @@ export async function syncBlockingRules(sites: RestrictedSite[], isSessionActive
     }
 
     const enabledSites = sites.filter(s => s.enabled);
-    const newRules: chrome.declarativeNetRequest.Rule[] = [];
+    const newRules: any[] = [];
     let ruleCounter = 0;
+
+    // Cross-browser safe action and resource type identifiers
+    const actionRedirect = dnr.RuleActionType?.REDIRECT || 'redirect';
+    const resourceMainFrame = dnr.ResourceType?.MAIN_FRAME || 'main_frame';
 
     enabledSites.forEach((site) => {
       const rootDomain = extractRootDomain(site.domain);
       if (!rootDomain) return;
 
       // Rule for domain and all subdomains (|| matches protocol and subdomain prefix)
-      // e.g. ||instagram.com matches http/https, www.instagram.com, m.instagram.com, etc.
       const ruleId = BASE_RULE_ID + (++ruleCounter);
 
       newRules.push({
         id: ruleId,
         priority: 1,
         action: {
-          type: chrome.declarativeNetRequest.RuleActionType.REDIRECT,
+          type: actionRedirect,
           redirect: {
-            // NOTE: extensionPath MUST NOT contain query params '?' or '#' per Chrome MV3 specification!
+            // NOTE: extensionPath MUST NOT contain query params '?' or '#' per MV3 specifications
             extensionPath: '/blocked.html',
           },
         },
         condition: {
           urlFilter: `||${rootDomain}`,
-          resourceTypes: [
-            chrome.declarativeNetRequest.ResourceType.MAIN_FRAME,
-          ],
+          resourceTypes: [resourceMainFrame],
         },
       });
     });
 
-    await chrome.declarativeNetRequest.updateDynamicRules({
+    await dnr.updateDynamicRules({
       removeRuleIds: existingRuleIds,
       addRules: newRules,
     });
 
     console.log(`[tabzero Rules] Detox ACTIVE: Successfully installed ${newRules.length} dynamic declarativeNetRequest rules.`);
   } catch (error) {
-    console.error('[tabzero Rules] Critical error updating dynamic rules:', error);
+    console.error('[tabzero Rules] Error updating dynamic rules:', error);
   }
 }

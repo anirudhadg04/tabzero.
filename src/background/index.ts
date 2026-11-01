@@ -1,5 +1,5 @@
 import { getStorageData, setStorageData } from '../storage';
-import { syncBlockingRules, extractRootDomain, isDomainBlocked } from '../blocking/rules';
+import { syncBlockingRules, extractRootDomain, isDomainBlocked, isInternalBrowserUrl } from '../blocking/rules';
 import { undo, redo, syncHistoryStateRules } from '../history';
 import {
   startDetoxSession,
@@ -23,6 +23,16 @@ import { evaluateAchievements } from '../services/achievements';
 import { recordDomainVisit } from '../services/tracker';
 import { fetchOpenMeteoWeather, detectLocationWithoutPermission } from '../weather';
 import { ExtensionMessage, RestrictedSite } from '../types';
+import { getExtensionAPI } from '../services/browserApi';
+
+// Cross-browser extension API references (supports Chrome, Firefox, Safari, Edge, Brave, Opera)
+const ext: any = getExtensionAPI();
+const tabsApi = ext?.tabs || (typeof chrome !== 'undefined' ? chrome.tabs : null);
+const runtimeApi = ext?.runtime || (typeof chrome !== 'undefined' ? chrome.runtime : null);
+const alarmsApi = ext?.alarms || (typeof chrome !== 'undefined' ? chrome.alarms : null);
+const webNavApi = ext?.webNavigation || (typeof chrome !== 'undefined' ? chrome.webNavigation : null);
+const windowsApi = ext?.windows || (typeof chrome !== 'undefined' ? chrome.windows : null);
+const idleApi = ext?.idle || (typeof chrome !== 'undefined' ? chrome.idle : null);
 
 let currentActiveUrl: string = '';
 let lastTrackedTimestamp: number = Date.now();
@@ -32,19 +42,19 @@ let isBrowserIdle: boolean = false;
  * Scan all currently open browser tabs and redirect any tabs matching restricted domains
  */
 async function purgeRestrictedTabs(sites: RestrictedSite[]) {
-  if (typeof chrome === 'undefined' || !chrome.tabs) return;
+  if (!tabsApi || !runtimeApi) return;
   try {
-    const tabs = await chrome.tabs.query({});
+    const tabs = await tabsApi.query({});
     for (const tab of tabs) {
       if (!tab.id || !tab.url) continue;
-      if (tab.url.startsWith('chrome-extension://') || tab.url.startsWith('chrome://') || tab.url.startsWith('about:')) continue;
+      if (isInternalBrowserUrl(tab.url)) continue;
 
-      const matchedSite = sites.find(s => s.enabled && isDomainBlocked(tab.url!, s.domain));
+      const matchedSite = sites.find((s: RestrictedSite) => s.enabled && isDomainBlocked(tab.url!, s.domain));
       if (matchedSite) {
         const rootDomain = extractRootDomain(matchedSite.domain);
         console.log(`[tabzero Purge] Immediately redirecting active tab ${tab.id} on ${tab.url}`);
-        const blockedUrl = chrome.runtime.getURL(`blocked.html?domain=${encodeURIComponent(rootDomain)}`);
-        chrome.tabs.update(tab.id, { url: blockedUrl });
+        const blockedUrl = runtimeApi.getURL(`blocked.html?domain=${encodeURIComponent(rootDomain)}`);
+        tabsApi.update(tab.id, { url: blockedUrl });
       }
     }
   } catch (e) {
@@ -56,10 +66,10 @@ async function purgeRestrictedTabs(sites: RestrictedSite[]) {
  * Scan all open tabs and restore any currently blocked tabs back to their original websites
  */
 async function unblockAndRefreshTabs() {
-  if (typeof chrome === 'undefined' || !chrome.tabs) return;
+  if (!tabsApi) return;
   try {
     const data = await getStorageData();
-    const tabs = await chrome.tabs.query({});
+    const tabs = await tabsApi.query({});
     for (const tab of tabs) {
       if (!tab.id || !tab.url) continue;
       if (tab.url.includes('blocked.html')) {
@@ -87,11 +97,11 @@ async function unblockAndRefreshTabs() {
           const clean = extractRootDomain(domain);
           const targetUrl = `https://${clean}`;
           console.log(`[tabzero Restore] Restoring blocked tab ${tab.id} to ${targetUrl}`);
-          chrome.tabs.update(tab.id, { url: targetUrl });
+          tabsApi.update(tab.id, { url: targetUrl });
         } else {
           // If no specific domain found, navigate back in browser history
-          chrome.tabs.goBack(tab.id).catch(() => {
-            chrome.tabs.update(tab.id!, { url: 'https://google.com' });
+          tabsApi.goBack(tab.id).catch(() => {
+            tabsApi.update(tab.id!, { url: 'https://google.com' });
           });
         }
       }
@@ -102,67 +112,73 @@ async function unblockAndRefreshTabs() {
 }
 
 // 1. Initialize Extension on install or start
-chrome.runtime.onInstalled.addListener(async () => {
-  console.log('[tabzero ServiceWorker] Extension installed / initialized.');
-  const data = await getStorageData();
-  const isSessionActive = data.history.present.activeSession?.status === 'active';
-  await syncBlockingRules(data.history.present.restrictedSites, isSessionActive);
-
-  if (isSessionActive) {
-    await purgeRestrictedTabs(data.history.present.restrictedSites);
-  }
-
-  // Set periodic alarms
-  chrome.alarms.create('check_session_tick', { periodInMinutes: 0.5 });
-  chrome.alarms.create('refresh_weather_alarm', { periodInMinutes: 60 });
-
-  // Initial weather fetch with auto location detection without permissions
-  try {
-    const loc = await detectLocationWithoutPermission();
-    data.userLocation = loc;
-    const weather = await fetchOpenMeteoWeather(
-      loc.latitude,
-      loc.longitude,
-      loc.city
-    );
-    data.weather = weather;
-    await setStorageData(data);
-  } catch (err) {
-    console.warn('[tabzero ServiceWorker] Initial weather fetch failed:', err);
-  }
-});
-
-// 2. Alarms listener (auto-complete session, weather refresh)
-chrome.alarms.onAlarm.addListener(async (alarm) => {
-  if (alarm.name === 'check_session_tick') {
+if (runtimeApi?.onInstalled?.addListener) {
+  runtimeApi.onInstalled.addListener(async () => {
+    console.log('[tabzero ServiceWorker] Extension installed / initialized.');
     const data = await getStorageData();
-    const session = data.history.present.activeSession;
-    if (session && session.status === 'active' && !session.isIndefinite) {
-      const now = Date.now();
-      if (now >= session.endTime) {
-        console.log('[tabzero ServiceWorker] Active session time reached. Completing session and refreshing blocked tabs.');
-        data.history = completeDetoxSession(data.history);
-        data.achievements = evaluateAchievements(data.achievements, data.history.present);
-        await setStorageData(data);
-        await unblockAndRefreshTabs();
-      }
+    const isSessionActive = data.history.present.activeSession?.status === 'active';
+    await syncBlockingRules(data.history.present.restrictedSites, isSessionActive);
+
+    if (isSessionActive) {
+      await purgeRestrictedTabs(data.history.present.restrictedSites);
     }
-  } else if (alarm.name === 'refresh_weather_alarm') {
-    const data = await getStorageData();
+
+    // Set periodic alarms
+    if (alarmsApi?.create) {
+      alarmsApi.create('check_session_tick', { periodInMinutes: 0.5 });
+      alarmsApi.create('refresh_weather_alarm', { periodInMinutes: 60 });
+    }
+
+    // Initial weather fetch with auto location detection without permissions
     try {
+      const loc = await detectLocationWithoutPermission();
+      data.userLocation = loc;
       const weather = await fetchOpenMeteoWeather(
-        data.userLocation.latitude,
-        data.userLocation.longitude,
-        data.userLocation.city,
-        data.weather
+        loc.latitude,
+        loc.longitude,
+        loc.city
       );
       data.weather = weather;
       await setStorageData(data);
-    } catch (e) {
-      console.warn('[tabzero ServiceWorker] Weather alarm update failed:', e);
+    } catch (err) {
+      console.warn('[tabzero ServiceWorker] Initial weather fetch failed:', err);
     }
-  }
-});
+  });
+}
+
+// 2. Alarms listener (auto-complete session, weather refresh)
+if (alarmsApi?.onAlarm?.addListener) {
+  alarmsApi.onAlarm.addListener(async (alarm: any) => {
+    if (alarm.name === 'check_session_tick') {
+      const data = await getStorageData();
+      const session = data.history.present.activeSession;
+      if (session && session.status === 'active' && !session.isIndefinite) {
+        const now = Date.now();
+        if (now >= session.endTime) {
+          console.log('[tabzero ServiceWorker] Active session time reached. Completing session and refreshing blocked tabs.');
+          data.history = completeDetoxSession(data.history);
+          data.achievements = evaluateAchievements(data.achievements, data.history.present);
+          await setStorageData(data);
+          await unblockAndRefreshTabs();
+        }
+      }
+    } else if (alarm.name === 'refresh_weather_alarm') {
+      const data = await getStorageData();
+      try {
+        const weather = await fetchOpenMeteoWeather(
+          data.userLocation.latitude,
+          data.userLocation.longitude,
+          data.userLocation.city,
+          data.weather
+        );
+        data.weather = weather;
+        await setStorageData(data);
+      } catch (e) {
+        console.warn('[tabzero ServiceWorker] Weather alarm update failed:', e);
+      }
+    }
+  });
+}
 
 // 3. Tab and Domain Tracking
 async function commitTrackedTime() {
@@ -179,11 +195,11 @@ async function commitTrackedTime() {
 }
 
 // 4. WebNavigation Early Interceptor (catches navigation before DOM begins loading)
-if (chrome.webNavigation && chrome.webNavigation.onBeforeNavigate) {
-  chrome.webNavigation.onBeforeNavigate.addListener(async (details) => {
+if (webNavApi?.onBeforeNavigate?.addListener) {
+  webNavApi.onBeforeNavigate.addListener(async (details: any) => {
     if (details.frameId !== 0) return; // Only main frame
     if (!details.url) return;
-    if (details.url.startsWith('chrome-extension://') || details.url.startsWith('chrome://') || details.url.startsWith('about:')) return;
+    if (isInternalBrowserUrl(details.url)) return;
 
     const data = await getStorageData();
     const session = data.history.present.activeSession;
@@ -204,59 +220,68 @@ if (chrome.webNavigation && chrome.webNavigation.onBeforeNavigate) {
       data.achievements = evaluateAchievements(data.achievements, data.history.present);
       await setStorageData(data);
 
-      const blockedUrl = chrome.runtime.getURL(`blocked.html?domain=${encodeURIComponent(rootDomain)}`);
-      chrome.tabs.update(details.tabId, { url: blockedUrl });
+      if (runtimeApi?.getURL && tabsApi?.update) {
+        const blockedUrl = runtimeApi.getURL(`blocked.html?domain=${encodeURIComponent(rootDomain)}`);
+        tabsApi.update(details.tabId, { url: blockedUrl });
+      }
     }
   });
 }
 
 // 5. Tabs Listeners for Tracking and Navigation Verification
-chrome.tabs.onActivated.addListener(async (activeInfo) => {
-  await commitTrackedTime();
-  try {
-    const tab = await chrome.tabs.get(activeInfo.tabId);
-    if (tab && tab.url) {
-      currentActiveUrl = tab.url;
-      lastTrackedTimestamp = Date.now();
-      checkRestrictedNavigation(tab.url, tab.id);
-    }
-  } catch {
-    // Tab might have been closed immediately
-  }
-});
-
-chrome.tabs.onUpdated.addListener(async (tabId, changeInfo, tab) => {
-  if (changeInfo.url) {
+if (tabsApi?.onActivated?.addListener) {
+  tabsApi.onActivated.addListener(async (activeInfo: any) => {
     await commitTrackedTime();
-    currentActiveUrl = changeInfo.url;
-    lastTrackedTimestamp = Date.now();
-    checkRestrictedNavigation(changeInfo.url, tabId);
+    try {
+      const tab = await tabsApi.get(activeInfo.tabId);
+      if (tab && tab.url) {
+        currentActiveUrl = tab.url;
+        lastTrackedTimestamp = Date.now();
+        checkRestrictedNavigation(tab.url, tab.id);
+      }
+    } catch {
+      // Tab might have been closed immediately
+    }
+  });
+}
 
-    // If redirected by declarativeNetRequest to blocked.html without domain param, enrich with domain
-    if (changeInfo.url.includes('blocked.html') && !changeInfo.url.includes('?domain=')) {
-      const data = await getStorageData();
-      const domain = data.tabDestinations?.[tabId] || data.lastBlockedDomain || data.history.present.restrictedSites[0]?.domain;
-      if (domain) {
-        chrome.tabs.update(tabId, {
-          url: chrome.runtime.getURL(`blocked.html?domain=${encodeURIComponent(extractRootDomain(domain))}`)
-        });
+if (tabsApi?.onUpdated?.addListener) {
+  tabsApi.onUpdated.addListener(async (tabId: number, changeInfo: any) => {
+    if (changeInfo.url) {
+      await commitTrackedTime();
+      currentActiveUrl = changeInfo.url;
+      lastTrackedTimestamp = Date.now();
+      checkRestrictedNavigation(changeInfo.url, tabId);
+
+      // If redirected by declarativeNetRequest to blocked.html without domain param, enrich with domain
+      if (changeInfo.url.includes('blocked.html') && !changeInfo.url.includes('?domain=')) {
+        const data = await getStorageData();
+        const domain = data.tabDestinations?.[tabId] || data.lastBlockedDomain || data.history.present.restrictedSites[0]?.domain;
+        if (domain && runtimeApi?.getURL && tabsApi?.update) {
+          tabsApi.update(tabId, {
+            url: runtimeApi.getURL(`blocked.html?domain=${encodeURIComponent(extractRootDomain(domain))}`)
+          });
+        }
       }
     }
-  }
-});
+  });
+}
 
-chrome.windows.onFocusChanged.addListener(async (windowId) => {
-  if (windowId === chrome.windows.WINDOW_ID_NONE) {
-    await commitTrackedTime();
-    isBrowserIdle = true;
-  } else {
-    isBrowserIdle = false;
-    lastTrackedTimestamp = Date.now();
-  }
-});
+if (windowsApi?.onFocusChanged?.addListener) {
+  const NONE_WINDOW = windowsApi.WINDOW_ID_NONE ?? -1;
+  windowsApi.onFocusChanged.addListener(async (windowId: number) => {
+    if (windowId === NONE_WINDOW) {
+      await commitTrackedTime();
+      isBrowserIdle = true;
+    } else {
+      isBrowserIdle = false;
+      lastTrackedTimestamp = Date.now();
+    }
+  });
+}
 
-if (chrome.idle) {
-  chrome.idle.onStateChanged.addListener(async (state) => {
+if (idleApi?.onStateChanged?.addListener) {
+  idleApi.onStateChanged.addListener(async (state: string) => {
     if (state === 'idle' || state === 'locked') {
       await commitTrackedTime();
       isBrowserIdle = true;
@@ -270,7 +295,7 @@ if (chrome.idle) {
 // Check and handle restricted navigation during active session
 async function checkRestrictedNavigation(url: string, tabId?: number) {
   if (!url) return;
-  if (url.startsWith('chrome-extension://') || url.startsWith('chrome://') || url.startsWith('about:')) return;
+  if (isInternalBrowserUrl(url)) return;
 
   const data = await getStorageData();
   const session = data.history.present.activeSession;
@@ -289,30 +314,33 @@ async function checkRestrictedNavigation(url: string, tabId?: number) {
     data.achievements = evaluateAchievements(data.achievements, data.history.present);
     await setStorageData(data);
 
-    if (tabId) {
-      const blockedUrl = chrome.runtime.getURL(`blocked.html?domain=${encodeURIComponent(rootDomain)}`);
-      chrome.tabs.update(tabId, { url: blockedUrl });
+    if (tabId && runtimeApi?.getURL && tabsApi?.update) {
+      const blockedUrl = runtimeApi.getURL(`blocked.html?domain=${encodeURIComponent(rootDomain)}`);
+      tabsApi.update(tabId, { url: blockedUrl });
     }
   }
 }
 
 // 6. Runtime Message Dispatcher
-chrome.runtime.onMessage.addListener((message: ExtensionMessage, sender, sendResponse) => {
-  (async () => {
-    const data = await getStorageData();
+if (runtimeApi?.onMessage?.addListener) {
+  runtimeApi.onMessage.addListener((message: ExtensionMessage, sender: any, sendResponse: (res: any) => void) => {
+    (async () => {
+      const data = await getStorageData();
 
-    switch (message.type) {
-      case 'GET_STATE': {
-        sendResponse({ success: true, data });
-        break;
-      }
+      switch (message.type) {
+        case 'GET_STATE': {
+          sendResponse({ success: true, data });
+          break;
+        }
 
-      case 'OPEN_DASHBOARD': {
-        const dashboardUrl = chrome.runtime.getURL('dashboard.html');
-        chrome.tabs.create({ url: dashboardUrl });
-        sendResponse({ success: true });
-        break;
-      }
+        case 'OPEN_DASHBOARD': {
+          const dashboardUrl = runtimeApi.getURL ? runtimeApi.getURL('dashboard.html') : 'dashboard.html';
+          if (tabsApi?.create) {
+            tabsApi.create({ url: dashboardUrl });
+          }
+          sendResponse({ success: true });
+          break;
+        }
 
       case 'TRIGGER_UNDO': {
         data.history = undo(data.history);
@@ -538,3 +566,4 @@ chrome.runtime.onMessage.addListener((message: ExtensionMessage, sender, sendRes
 
   return true;
 });
+}
